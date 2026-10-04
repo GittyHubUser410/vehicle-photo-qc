@@ -12,9 +12,9 @@ It does **not** learn crop quality, angle acceptability, plastic, or overall dea
 2. Keep the same dealership/source and stock number for repeated shoots of the same vehicle. This helps keep that vehicle in a single data split. For outside sources, use a consistent source name and vehicle identifier in stock number. No VIN decoding or automatic vehicle identity matching is implemented.
 3. Label the shot type separately from its quality. A blurry front shot is still a front shot.
 4. Use driver/passenger relative to the vehicle, not to the image viewer. Record and consistently apply your policy for right-hand-drive vehicles before mixing them into training.
-5. New examples default to **Good** to reduce entry. Inspect these defaults before approval. Copy Settings and bulk paste preserve shot types, but clear approval. Mark defect dimensions independently. Use **Unknown** if you have not inspected a dimension; absence of a label does not mean good.
+5. New examples default to **Good** to reduce entry. New training examples start approved; inspect these defaults and uncheck approval when needed. Copy Settings and bulk paste preserve shot types, but clear approval. Mark defect dimensions independently. Use **Unknown** if you have not inspected a dimension; absence of a label does not mean good.
 6. Add environmental context where practical: lighting, wet/snow/dry ground, and location. Season defaults to Northern Hemisphere meteorological season by shoot date and can be overridden at import.
-7. Check **Approved for training** only after reviewing the label. Changing a prediction does not silently approve training data.
+7. **Approved for training** starts checked on new examples. Uncheck it to exclude a photo; review the label. Changing a prediction does not silently approve training data.
 
 Begin with enough independent shoots to show each target shot class across different vehicle shapes, colors, cameras, and conditions. Upload counts alone do not establish readiness. The training command refuses a dataset lacking class coverage in training or validation, or without any test vehicles.
 

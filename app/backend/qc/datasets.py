@@ -11,11 +11,15 @@ def export_dataset(session, data, seed=42):
         select(TrainingExample, Photo, Shoot)
         .join(Photo, TrainingExample.photo_id == Photo.id)
         .join(Shoot, Photo.shoot_id == Shoot.id)
-        .where(TrainingExample.eligible.is_(True), Shoot.training_deleted_at.is_(None))
+        .where(
+            TrainingExample.eligible.is_(True),
+            Shoot.training_deleted_at.is_(None),
+            TrainingExample.labels["shot_type"].as_string() != "unknown",
+        )
         .order_by(Shoot.id, Photo.position)
     ).all()
     if not rows:
-        raise ValueError("Approve labeled photos in the Training Library first.")
+        raise ValueError("Choose shot types and approve photos in the Training Library first.")
     # Union connected shoots by exact duplicate bytes and known vehicle identity.
     # This prevents even transitive duplicates from crossing train/validation/test.
     parents = {s.id: s.id for _, _, s in rows}

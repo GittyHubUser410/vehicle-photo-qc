@@ -48,7 +48,7 @@ Set this every time in a new terminal, or add it to your own local startup short
 | A batch contains one corrupt image | The batch rolls back. Remove or re-export that file and import again. |
 | Analysis says failed | The original remains saved. Check terminal logs, disk space, and model files. Disable the active model if necessary, then click Reanalyze. |
 | Library looks empty after a restart | Check that `QC_DATA_DIR` points at the same folder as before. |
-| Phone cannot open the PC app | Expected for this loopback-only prototype. Remote access and accounts are a later deployment step. |
+| Phone cannot open the PC app | Local startup accepts only this PC. For approved remote users, configure [remote access](REMOTE-ACCESS.md). |
 
 ## Update the code later
 

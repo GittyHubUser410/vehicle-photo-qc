@@ -92,6 +92,7 @@ export function Upload({
   const photosRef = useRef(photos);
   photosRef.current = photos;
   const input = useRef<HTMLInputElement>(null);
+  const camera = useRef<HTMLInputElement>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -224,6 +225,18 @@ export function Upload({
   return (
     <form onSubmit={submit} className="upload-form">
       <fieldset disabled={busy}>
+        <input
+          ref={camera}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          capture="environment"
+          aria-label="Take a vehicle photo"
+          hidden
+          onChange={(e) => {
+            pick(e.target.files);
+            e.target.value = "";
+          }}
+        />
         <div className="panel">
           <div className="section-heading">
             <div>
@@ -258,7 +271,7 @@ export function Upload({
           <p className="form-note">
             {mode === "general"
               ? training
-                ? "Examples from any source. They enter training only after you label and approve them."
+                ? "Training uploads start approved. You can uncheck approval for any photo. Choose a shot type before it can enter a dataset."
                 : "Technical checks for any vehicle, without dealership photo-count or sequence rules."
               : "Choose the store and inventory type to apply its saved standards."}
           </p>
@@ -582,6 +595,19 @@ export function Upload({
           )}
         </div>
       </fieldset>
+      <button
+        type="button"
+        className="button secondary"
+        disabled={busy}
+        onClick={() => camera.current?.click()}
+      >
+        <Camera size={16} /> Take photo
+      </button>
+      <p className="form-note">
+        On Android, Take photo opens the camera when supported. Keep this page
+        open while uploading; if interrupted, submit again to retry. Use JPEG,
+        PNG, or WebP.
+      </p>
       {error && <ErrorBox message={error} />}
       <div className="upload-footer">
         <p>

@@ -17,10 +17,13 @@ export async function api<T>(
     const body = await response
       .json()
       .catch(() => ({ detail: response.statusText }));
-    throw new Error(
-      typeof body.detail === "string"
-        ? body.detail
-        : JSON.stringify(body.detail),
+    throw Object.assign(
+      new Error(
+        typeof body.detail === "string"
+          ? body.detail
+          : JSON.stringify(body.detail),
+      ),
+      { status: response.status },
     );
   }
   return response.json();
@@ -77,42 +80,113 @@ export function useStored<T>(
   return [value, setValue];
 }
 
-export function uploadPhotos(
+// Retry the same staged batch if the connection drops; no duplicate vehicle is created.
+let pendingUpload: { signature: string; id: string } | null = null;
+export async function uploadPhotos(
   metadata: unknown,
   files: File[],
   progress: (percent: number) => void,
 ): Promise<{ id: string }> {
-  return new Promise((resolve, reject) => {
+  const signature = JSON.stringify([
+    metadata,
+    files.map((f) => [f.name, f.size, f.lastModified]),
+  ]);
+  if (pendingUpload && pendingUpload.signature !== signature) {
+    const old = await api<{ result: { id: string } | null }>(
+      `/uploads/${pendingUpload.id}`,
+    ).catch((e) => {
+      if (e.status === 404 || e.status === 410) return null;
+      throw e;
+    });
+    if (old?.result) {
+      pendingUpload = null;
+      return old.result;
+    }
+    if (old) await api(`/uploads/${pendingUpload.id}`, { method: "DELETE" });
+    pendingUpload = null;
+  }
+  if (!pendingUpload) {
+    const batch = await send<{ id: string }>("/uploads", "POST", {
+      metadata,
+      count: files.length,
+    });
+    pendingUpload = { signature, id: batch.id };
+  }
+  const id = pendingUpload.id;
+  let status: { received: number[]; result: { id: string } | null };
+  try {
+    status = await api(`/uploads/${id}`);
+  } catch (e) {
+    if ([404, 410].includes((e as Error & { status: number }).status))
+      pendingUpload = null;
+    throw e;
+  }
+  if (status.result) {
+    pendingUpload = null;
+    progress(100);
+    return status.result;
+  }
+  const total = files.reduce((sum, f) => sum + f.size, 0);
+  let sent = 0;
+  for (let i = 0; i < files.length; i++) {
+    if (status.received.includes(i)) {
+      sent += files[i].size;
+      continue;
+    }
     const form = new FormData();
-    form.append("metadata", JSON.stringify(metadata));
-    files.forEach((file) => form.append("files", file));
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", "/api/shoots");
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) progress(Math.round((e.loaded / e.total) * 100));
-    };
-    xhr.onerror = () =>
-      reject(
-        new Error(
-          "Upload connection failed. Check that the local server is running.",
-        ),
-      );
-    xhr.onload = () => {
-      try {
-        const body = JSON.parse(xhr.responseText);
-        if (xhr.status >= 200 && xhr.status < 300) resolve(body);
-        else
+    form.append("file", files[i]);
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("PUT", `/api/uploads/${id}/photos/${i}`);
+        xhr.timeout = 180000;
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable)
+            progress(
+              Math.min(
+                99,
+                Math.round(
+                  ((sent + (files[i].size * e.loaded) / e.total) / total) * 100,
+                ),
+              ),
+            );
+        };
+        xhr.onerror = xhr.ontimeout = () =>
           reject(
             new Error(
-              typeof body.detail === "string"
-                ? body.detail
-                : JSON.stringify(body.detail),
+              "Connection interrupted. Keep this page open and submit again to retry the same upload.",
             ),
           );
-      } catch {
-        reject(new Error("The server could not finish this upload."));
-      }
-    };
-    xhr.send(form);
-  });
+        xhr.onload = () => {
+          if (xhr.status === 404 || xhr.status === 410) pendingUpload = null;
+          try {
+            const body = JSON.parse(xhr.responseText);
+            if (xhr.status >= 200 && xhr.status < 300) resolve();
+            else
+              reject(
+                new Error(
+                  typeof body.detail === "string"
+                    ? body.detail
+                    : "Upload failed. Retry after checking the connection.",
+                ),
+              );
+          } catch {
+            reject(
+              new Error(
+                "Your login may have expired. Sign in again in another tab, then retry this upload.",
+              ),
+            );
+          }
+        };
+        xhr.send(form);
+      });
+    } catch (error) {
+      throw error;
+    }
+    sent += files[i].size;
+  }
+  const result = await send<{ id: string }>(`/uploads/${id}/complete`, "POST");
+  pendingUpload = null;
+  progress(100);
+  return result;
 }

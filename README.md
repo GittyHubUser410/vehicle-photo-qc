@@ -46,6 +46,10 @@ This setting applies to the current PowerShell session. Use the same folder on l
 
 See [the incremental upgrade notes](docs/REVISION-UPGRADE.md) for automatic data migration, faster labeling, remembered sequences, and Trash.
 
+## Remote access
+
+For a small trusted team using Android or other computers, see [Windows 11 remote setup](docs/REMOTE-ACCESS.md). Cloudflare Access login and a named tunnel protect the existing PC-hosted app. Remote mode is opt-in and is not deployed automatically.
+
 ## Your first session
 
 1. Open **Dealership Setup**. Rename the three placeholder dealerships and sample conglomerate. Add your photographers. Configure new and used standards separately. The placeholders have no required-shot list or minimum count until you set them.
@@ -53,7 +57,7 @@ See [the incremental upgrade notes](docs/REVISION-UPGRADE.md) for automatic data
 3. Check the numbered photo tray. Drag to reorder or use the arrows; this explicit order is the order saved. JPEG, PNG, and WebP are supported, up to 200 photos per shoot, 25 MB each, and 1 GB per batch. Export HEIC/RAW files to JPEG first.
 4. Click **Evaluate photos**. Original bytes are copied unchanged, oriented thumbnails are generated, and a local background worker measures technical quality.
 5. Open **Vehicle Results** or **Review Queue**. Opening a queue item marks it viewed; **Resolve / remove from queue** closes it. The photo and review history remain saved. A reviewer name is an annotation, not an authenticated account.
-6. Use **Training Library → Upload training data** for dedicated examples. Choose Stage Now for outside sources, or **Add to Training Library** from an operational photo. Label the shot and individual defects, then approve it. Uploaded photos do not automatically train anything.
+6. Use **Training Library → Upload training data** for dedicated examples. Choose Stage Now for outside sources, or **Add to Training Library** from an operational photo. New examples start approved with Good quality labels. Review the shot type and labels, and uncheck approval when needed. Uploaded photos do not automatically train anything.
 
 See [TRAINING.md](docs/TRAINING.md) for collection guidance, dataset exports, and the optional GPU training commands.
 
@@ -81,7 +85,7 @@ See [TRAINING.md](docs/TRAINING.md) for collection guidance, dataset exports, an
 - Automatic banner-overlap decisions and arbitrary uploaded banner graphics.
 - Plastic, floor-mat, and steering-wheel checks.
 - Full vehicle-quality scoring that combines technical, framing, angle, and dealership criteria.
-- Authenticated accounts, remote phone access, hosted deployment, and HomeNet/DigiLot integrations.
+- Cloud-hosted deployment, fine-grained user roles, and HomeNet/DigiLot integrations.
 - Browser-based training controls; training is an explicit Python command for now.
 
 **The current score is only a technical screening score.** It starts at 100 and deducts 35/20/10 points for severe/moderate/minor technical findings. A shoot score is the mean of its photo technical scores. Missing-shot/sequence findings appear separately and do not change this number. A technically high-scoring image can still have poor framing, a wrong angle, or a cropped vehicle. Dark vehicles, bright backgrounds, and low-texture scenes can produce false positives. Inspect the original before requesting a reshoot.

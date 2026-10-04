@@ -4,7 +4,7 @@
 
 React/TypeScript is built by Vite. FastAPI serves the built interface and `/api` routes on `127.0.0.1:8000`. SQLite stores structured records; ordinary files hold immutable originals, thumbnails, dataset manifests, and model weights. A single background thread processes shoots with durable `queued` state.
 
-The app is single-process and local-only. Use `--workers 1`. There is no authentication. Trusted-host and origin checks reduce unintended browser access, but this is not a multi-user security design. Do not expose it directly to the internet or a shared network. Moving online requires accounts, authorization, object storage, a separate worker queue, and a server database review.
+The app is single-process; use `--workers 1`. Local-only mode remains the default. Optional remote mode validates Cloudflare Access RS256 tokens (signature, issuer, audience, expiry, subject, and email), restricts hosts and write origins, and disables caching. Remote access is for a small trusted team with equal permissions through an Access-protected named tunnel; keep the backend bound to loopback. There is no public anonymous mode or fine-grained role system. See [remote setup](REMOTE-ACCESS.md). Scaling to a hosted multi-process service requires a worker/transaction review and shared storage.
 
 ## Tables
 
@@ -97,3 +97,7 @@ Live request schemas and validation constraints are generated at `/docs`.
 - Vite setup: https://vite.dev/guide/
 - PyTorch install selector: https://pytorch.org/get-started/locally/
 - Torchvision ResNet18 and weights preprocessing: https://docs.pytorch.org/vision/stable/models/generated/torchvision.models.resnet18.html
+
+## Remote upload staging
+
+`uploads.py` stores owner-bound 24-hour batches under `data/upload-staging`. One image is validated per request. A single-process lock serializes stage mutations, and the existing import transaction creates the whole vehicle only when all images are ready. Stable batch/shoot IDs and completion receipts make retries idempotent, including recovery after a DB commit before its receipt. Staged files never enter active libraries or dataset exports. Existing direct imports remain supported. No schema change is required.

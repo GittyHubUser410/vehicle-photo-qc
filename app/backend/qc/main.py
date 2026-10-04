@@ -3,13 +3,13 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 from datetime import date
 
-from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 from sqlalchemy import String, cast, func, inspect, or_, select, update
 from sqlalchemy.exc import IntegrityError
-from starlette.middleware.trustedhost import TrustedHostMiddleware
+from .security import configure_security
 
 from .analysis import Worker
 from .banner import banner_region, banner_overlap
@@ -117,23 +117,7 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
 
     app = FastAPI(title="Vehicle Photo QC", version="0.1.0", lifespan=lifespan)
     app.state.factory, app.state.data, app.state.worker = factory, data, worker
-    app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "testserver"])
-
-    @app.middleware("http")
-    async def local_origin(request: Request, call_next):
-        if request.method not in ("GET", "HEAD", "OPTIONS"):
-            origin = request.headers.get("origin")
-            if origin and origin not in (
-                "http://localhost:8000",
-                "http://127.0.0.1:8000",
-                "http://localhost:5173",
-                "http://127.0.0.1:5173",
-            ):
-                return JSONResponse(
-                    {"detail": "This local prototype accepts requests from its own interface only."},
-                    status_code=403,
-                )
-        return await call_next(request)
+    security = configure_security(app)
 
     @app.exception_handler(IntegrityError)
     async def integrity_error(request, exc):
@@ -148,7 +132,7 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
             "status": "ok",
             "version": "0.1.0",
             "analysis": "provisional technical measurements",
-            "accounts": False,
+            "accounts": security.remote,
         }
 
     @app.get("/api/config")
@@ -233,12 +217,7 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
             session.commit()
             return serialize(obj)
 
-    @app.post("/api/shoots", status_code=201)
-    def import_shoot(metadata: str = Form(...), files: list[UploadFile] = File(...)):
-        try:
-            body = ImportInput.model_validate_json(metadata)
-        except ValidationError as exc:
-            raise HTTPException(422, str(exc)) from exc
+    def import_batch(body, files, prepared=None, shoot_id=None):
         if not 1 <= len(files) <= 200:
             raise HTTPException(422, "Select between 1 and 200 photos per shoot.")
         created = []
@@ -270,6 +249,7 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
                     else "autumn"
                 )
                 shoot = Shoot(
+                    **({"id": shoot_id} if shoot_id else {}),
                     **values,
                     season=season,
                     season_source="manual" if body.season else "northern_meteorological",
@@ -279,9 +259,20 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
                 session.flush()
                 total = 0
                 for position, upload in enumerate(files, 1):
-                    photo_id = uid()
-                    details, paths = prepare_image(upload, photo_id, data)
-                    created.extend(paths)
+                    if prepared is None:
+                        photo_id = uid()
+                        details, paths = prepare_image(upload, photo_id, data)
+                        created.extend(paths)
+                    else:
+                        import shutil
+
+                        item = prepared[position - 1]
+                        photo_id, details = item["photo_id"], item["details"]
+                        for key in (details["original_key"], details["thumbnail_key"]):
+                            destination = data / key
+                            destination.parent.mkdir(parents=True, exist_ok=True)
+                            created.append(destination)
+                            shutil.copyfile(item["root"] / key, destination)
                     total += details["byte_size"]
                     if total > MAX_BATCH_BYTES:
                         raise ValueError("One shoot must be 1 GB or smaller.")
@@ -302,6 +293,7 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
                                 photo_id=photo.id,
                                 origin=values["source"] or "dedicated_upload",
                                 labels=good_labels(photo.shot_type),
+                                eligible=True,
                             )
                         )
                 remember_sequence(session, shoot, policy)
@@ -315,8 +307,21 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
                     raise HTTPException(422, str(exc)) from exc
                 raise
             finally:
-                for upload in files:
-                    upload.file.close()
+                if prepared is None:
+                    for upload in files:
+                        upload.file.close()
+
+    @app.post("/api/shoots", status_code=201)
+    def import_shoot(metadata: str = Form(...), files: list[UploadFile] = File(...)):
+        try:
+            body = ImportInput.model_validate_json(metadata)
+        except ValidationError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        return import_batch(body, files)
+
+    from .uploads import register_upload_routes
+
+    register_upload_routes(app, factory, data, import_batch)
 
     def summary(session, shoot, training_only=False):
         dealer = session.get(Dealer, shoot.dealership_id) if shoot.dealership_id else None

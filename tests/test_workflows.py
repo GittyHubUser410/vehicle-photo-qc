@@ -188,7 +188,7 @@ def test_training_approval_revision_and_duplicate_safe_dataset(client, app):
     shoot2 = upload(client, purpose="training", source="Stage Now", stock_number="OTHER").json()["id"]
     analyze(app, shoot1)
     assert client.get("/api/reviews").json()["total"] == 0
-    assert client.post("/api/datasets").status_code == 422
+    assert client.post("/api/datasets").status_code == 201
     for shoot_id in (shoot1, shoot2):
         photo = client.get(f"/api/shoots/{shoot_id}").json()["photos"][0]
         url = f"/api/photos/{photo['id']}/training"

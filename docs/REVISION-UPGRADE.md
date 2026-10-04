@@ -10,7 +10,7 @@ The database-only migration backup is not a replacement for your normal full bac
 
 ## Faster entry
 
-- New training examples start with all quality fields **Good**, using the normal shot type. Existing labels are untouched. Approval remains an explicit action.
+- New training examples start with all quality fields **Good**, using the normal shot type. Existing labels are untouched. New uploads now start approved; the checkbox can be cleared. Existing approvals remain unchanged.
 - **Copy Settings** copies current quality labels and the note, including unsaved edits. **Paste settings…** lets you choose one or many photos in a vehicle. The clipboard survives closing a vehicle within the same browser session, so you can paste into another vehicle. Both normal and training shot types are preserved. Pasting clears approval and uses revision checks to avoid overwriting another editor's changes.
 - Pending thumbnails have individual remove buttons and selection controls for bulk removal. No stored files are deleted by these controls.
 - Changing a normal shot type populates its training shot type. A later manual training-shot choice remains until the normal shot changes again. These label changes clear training approval.

@@ -229,6 +229,9 @@ test("training defaults, pending removal, bulk paste, shot sync, and trash resto
   await detail
     .getByRole("combobox", { name: "Exposure", exact: true })
     .selectOption("bad");
+  await expect(
+    detail.getByLabel("Approved for training", { exact: true }),
+  ).toBeChecked();
   await detail
     .getByRole("button", { name: "Copy Settings", exact: true })
     .click();
@@ -307,4 +310,82 @@ test("training defaults, pending removal, bulk paste, shot sync, and trash resto
       .filter({ hasText: "REVISION-TRAINING" }),
   ).toHaveCount(1);
   expect(errors).toEqual([]);
+});
+
+test("Android-sized capture and interrupted staged uploads keep one vehicle", async ({
+  page,
+  request,
+}) => {
+  await page.setViewportSize({ width: 412, height: 915 });
+  let failedPhoto = false,
+    failedReceipt = false,
+    batches = 0;
+  page.on("request", (r) => {
+    if (r.method() === "POST" && new URL(r.url()).pathname === "/api/uploads")
+      batches++;
+  });
+  await page.route(/\/api\/uploads\/[^/]+\/photos\/1$/, async (route) => {
+    if (!failedPhoto) {
+      failedPhoto = true;
+      await route.abort();
+    } else await route.continue();
+  });
+  await page.route(/\/api\/uploads\/[^/]+\/complete$/, async (route) => {
+    if (!failedReceipt) {
+      failedReceipt = true;
+      await route.fetch();
+      await route.abort();
+    } else await route.continue();
+  });
+  await page.goto("/");
+  await page
+    .getByRole("navigation", { name: "Mobile navigation" })
+    .getByRole("button", { name: "Evaluate", exact: true })
+    .click();
+  await page.getByRole("button", { name: "General QC", exact: true }).click();
+  await page.getByLabel("Stock number", { exact: true }).fill("ANDROID-RETRY");
+  const camera = page.getByLabel("Take a vehicle photo", { exact: true });
+  await expect(camera).toHaveAttribute("capture", "environment");
+  await camera.setInputFiles({
+    name: "camera.png",
+    mimeType: "image/png",
+    buffer: png(),
+  });
+  await page
+    .getByLabel("Select photos", { exact: true })
+    .setInputFiles({
+      name: "gallery.png",
+      mimeType: "image/png",
+      buffer: png(),
+    });
+  const submit = page.getByRole("button", {
+    name: "Evaluate 2 photos",
+    exact: true,
+  });
+  await submit.click();
+  await expect(page.getByRole("alert")).toContainText("Connection interrupted");
+  await submit.click();
+  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(submit).toBeEnabled();
+  await submit.click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  await expect(
+    dialog.getByRole("button", { name: "Reanalyze shoot", exact: true }),
+  ).toBeEnabled({ timeout: 20000 });
+  const vehicles = await (
+    await request.get("/api/shoots?q=ANDROID-RETRY")
+  ).json();
+  expect(vehicles.total).toBe(1);
+  expect(vehicles.items[0].photo_count).toBe(2);
+  expect(batches).toBe(1);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth > innerWidth,
+    ),
+  ).toBe(false);
+  await page.screenshot({
+    path: "test-results/android-capture-retry.png",
+    fullPage: true,
+  });
 });

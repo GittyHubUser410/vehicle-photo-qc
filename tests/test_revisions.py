@@ -55,7 +55,7 @@ def test_good_defaults_and_shot_sync_without_overwriting_manual_training(client,
     for p in photos:
         assert all(p["training"]["labels"][key] == "good" for key in QUALITY_KEYS)
         assert p["training"]["labels"]["shot_type"] == p["shot_type"]
-        assert not p["training"]["eligible"]
+        assert p["training"]["eligible"]
     p = photos[0]
     save(client, p, labels={**p["training"]["labels"], "shot_type": "rear"})
     url = f"/api/photos/{p['id']}/shot"

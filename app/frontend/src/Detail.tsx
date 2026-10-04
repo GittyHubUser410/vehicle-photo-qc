@@ -711,6 +711,7 @@ function TrainingEditor({
         Approved for training
       </label>
       <p className="form-note">
+        New training photos start approved. Choose a shot type before export.
         Uncheck to exclude this photo from future datasets. Originals and
         previous snapshots remain unchanged.
       </p>

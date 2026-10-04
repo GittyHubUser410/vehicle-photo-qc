@@ -74,7 +74,9 @@ def training_example(session, photo, origin="operational_photo"):
     if example and example.deleted_at:
         raise HTTPException(409, "This training photo is in Trash. Restore it before editing.")
     if not example:
-        example = TrainingExample(photo_id=photo.id, origin=origin, labels=good_labels(photo.shot_type))
+        example = TrainingExample(
+            photo_id=photo.id, origin=origin, labels=good_labels(photo.shot_type), eligible=True
+        )
         session.add(example)
         session.flush()
     return example
