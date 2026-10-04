@@ -1,5 +1,6 @@
 import hashlib
 import json
+import sqlite3
 from collections import Counter
 from pathlib import Path
 
@@ -7,17 +8,39 @@ from qc.media import resolved_file
 from qc.schemas import SHOT_TYPES
 
 
-def read_manifest(path, data):
+def read_manifest(path, data, respect_trash=True):
     manifest = json.loads(Path(path).read_text())
     if manifest.get("schema_version") != 1 or not manifest.get("entries"):
         raise ValueError("Expected a non-empty version 1 dataset export.")
     entries = manifest["entries"]
+    known_shots = set(SHOT_TYPES)
+    database = Path(data) / "qc.db"
+    if database.is_file():
+        with sqlite3.connect(database) as connection:
+            version = connection.execute("PRAGMA user_version").fetchone()[0]
+            if version >= 2:
+                known_shots.update(row[0] for row in connection.execute("SELECT key FROM shot_types"))
+                if respect_trash:
+                    removed = {
+                        row[0]
+                        for row in connection.execute("""
+                        SELECT p.id FROM photos p JOIN vehicle_shoots s ON s.id=p.shoot_id
+                        LEFT JOIN training_examples t ON t.photo_id=p.id
+                        WHERE p.deleted_at IS NOT NULL OR s.deleted_at IS NOT NULL
+                        OR s.training_deleted_at IS NOT NULL OR t.deleted_at IS NOT NULL OR t.eligible = 0
+                    """)
+                    }
+                    entries = [e for e in entries if e["photo_id"] not in removed]
+                    if not entries:
+                        raise ValueError(
+                            "No approved photos remain in this snapshot. Restore items from Trash and review approval, or export a new dataset."
+                        )
     memberships, duplicate_labels = {}, {}
     for entry in entries:
         if entry["split"] not in ("train", "validation", "test"):
             raise ValueError("Unknown dataset split")
         shot = entry["labels"].get("shot_type")
-        if shot not in SHOT_TYPES or shot == "unknown":
+        if shot not in known_shots or shot == "unknown":
             raise ValueError("Each example must have a supported shot label.")
         for key in ("group_id", "shoot_id", "sha256"):
             group = (key, entry[key])

@@ -3,25 +3,12 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-SHOT_TYPES = [
-    "unknown",
-    "front",
-    "rear",
-    "driver_profile",
-    "passenger_profile",
-    "front_driver_34",
-    "front_passenger_34",
-    "rear_driver_34",
-    "rear_passenger_34",
-    "interior",
-    "dashboard",
-    "odometer",
-    "cargo",
-    "engine",
-    "wheel",
-    "detail",
-    "other",
-]
+import re
+
+from .catalog import SHOT_CATALOG
+
+# Compatibility export for older integrations; runtime validation uses the DB catalog.
+SHOT_TYPES = [key for key, _ in SHOT_CATALOG]
 
 
 class Strict(BaseModel):
@@ -34,8 +21,10 @@ class Rules(Strict):
     bright_max: float = Field(0.35, ge=0, le=1)
     saturation_max: float = Field(0.85, ge=0, le=1)
     min_photos: int = Field(0, ge=0, le=200)
-    required_shots: list[str] = Field(default_factory=list, max_length=40)
+    required_shots: list[str] = Field(default_factory=list, max_length=200)
     strict_sequence: bool = False
+    banner_application: Literal["none", "first", "all"] = "all"
+    banner_shot_types: list[str] = Field(default_factory=list, max_length=200)
     banner_top_pct: float = Field(0, ge=0, le=40)
     banner_clearance_pct: float = Field(2, ge=0, le=30)
     angle_tolerance_deg: float = Field(10, ge=0, le=90)
@@ -43,7 +32,9 @@ class Rules(Strict):
     @field_validator("required_shots")
     @classmethod
     def shots(cls, values):
-        if len(values) != len(set(values)) or any(v not in SHOT_TYPES[1:] for v in values):
+        if len(values) != len(set(values)) or any(
+            v == "unknown" or not re.fullmatch(r"[a-z][a-z0-9_]{0,79}", v) for v in values
+        ):
             raise ValueError("Use unique supported shot types.")
         return values
 
@@ -95,6 +86,7 @@ class ImportInput(Strict):
         "unknown"
     )
     note: str = Field("", max_length=2000)
+    shot_types: list[str] | None = Field(None, max_length=200)
 
     @model_validator(mode="after")
     def valid_mode(self):
@@ -106,7 +98,7 @@ class ImportInput(Strict):
 
 
 def validated_shot(value: str) -> str:
-    if value not in SHOT_TYPES:
+    if not re.fullmatch(r"[a-z][a-z0-9_]{0,79}", value):
         raise ValueError("Unsupported shot type")
     return value
 
@@ -147,3 +139,18 @@ class ReviewInput(Strict):
     actor: str = Field("Local reviewer", min_length=1, max_length=150)
     note: str | None = Field(None, max_length=2000)
     resolution: Literal["accepted", "reshoot_requested", "false_positive", "other"] = "accepted"
+
+
+class PasteTarget(Strict):
+    photo_id: str
+    revision: int | None = None
+
+
+class PasteInput(Strict):
+    targets: list[PasteTarget] = Field(min_length=1, max_length=200)
+    labels: Labels
+    actor: str = Field("Local reviewer", min_length=1, max_length=150)
+
+
+class TrashInput(Strict):
+    scope: Literal["all", "training"] = "all"

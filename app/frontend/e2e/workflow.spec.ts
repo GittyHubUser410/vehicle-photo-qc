@@ -174,3 +174,137 @@ test("phone navigation and dealership override save", async ({ page }) => {
     fullPage: true,
   });
 });
+
+test("training defaults, pending removal, bulk paste, shot sync, and trash restore", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto("/");
+  const nav = page.getByRole("navigation", { name: "Main navigation" });
+  await nav
+    .getByRole("button", { name: "Training Library", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Upload training data", exact: true })
+    .click();
+  const upload = page.getByRole("dialog");
+  await upload
+    .getByRole("button", { name: "Stage Now / outside photos", exact: true })
+    .click();
+  await upload
+    .getByLabel("Stock number", { exact: true })
+    .fill("REVISION-TRAINING");
+  await upload.getByLabel("Select photos", { exact: true }).setInputFiles(
+    Array.from({ length: 5 }, (_, i) => ({
+      name: `training-${i}.png`,
+      mimeType: "image/png",
+      buffer: png(),
+    })),
+  );
+  await upload
+    .getByRole("button", { name: "Remove photo 5", exact: true })
+    .click();
+  await upload.getByLabel("Select pending photo 4", { exact: true }).check();
+  await upload.getByRole("button", { name: /Remove selected/ }).click();
+  await expect(
+    upload.getByLabel("Shot type for pending photo 1", { exact: true }),
+  ).toHaveValue("front_passenger_34");
+  await expect(
+    upload.getByLabel("Shot type for pending photo 2", { exact: true }),
+  ).toHaveValue("front");
+  await upload
+    .getByRole("button", { name: "Import 3 training photos" })
+    .click();
+  const detail = page.getByRole("dialog").first();
+  await expect(
+    detail.getByRole("button", { name: "Reanalyze shoot", exact: true }),
+  ).toBeEnabled({ timeout: 20000 });
+  await expect(
+    detail.getByRole("combobox", { name: "Exposure", exact: true }),
+  ).toHaveValue("good");
+  await expect(
+    detail.getByRole("combobox", { name: "Training shot type", exact: true }),
+  ).toHaveValue("front_passenger_34");
+  await detail
+    .getByRole("combobox", { name: "Exposure", exact: true })
+    .selectOption("bad");
+  await detail
+    .getByRole("button", { name: "Copy Settings", exact: true })
+    .click();
+  await detail
+    .getByRole("button", { name: "Paste settings…", exact: true })
+    .click();
+  const paste = page.getByRole("dialog", {
+    name: "Paste settings",
+    exact: true,
+  });
+  await paste.getByRole("button", { name: "Select all", exact: true }).click();
+  await paste
+    .getByRole("button", { name: "Paste to 3 photos", exact: true })
+    .click();
+  await expect(paste).not.toBeVisible();
+  await detail
+    .getByRole("button", { name: "View photo 2", exact: true })
+    .click();
+  await expect(
+    detail.getByRole("combobox", { name: "Exposure", exact: true }),
+  ).toHaveValue("bad");
+  await expect(
+    detail.getByRole("combobox", { name: "Training shot type", exact: true }),
+  ).toHaveValue("front");
+  await detail
+    .getByRole("combobox", { name: "Training shot type", exact: true })
+    .selectOption("engine");
+  await detail
+    .getByRole("button", { name: "Save labels", exact: true })
+    .click();
+  await expect(page.getByRole("status")).toContainText(
+    "Training labels saved.",
+  );
+  await detail
+    .getByRole("combobox", { name: "Shot type (human label)", exact: true })
+    .selectOption("rear");
+  await expect(
+    detail.getByRole("combobox", { name: "Training shot type", exact: true }),
+  ).toHaveValue("rear");
+  await page.screenshot({
+    path: "test-results/training-revisions.png",
+    fullPage: true,
+  });
+  await detail
+    .getByRole("button", { name: "Delete photo…", exact: true })
+    .click();
+  await page
+    .getByRole("dialog", { name: "Delete photo?", exact: true })
+    .getByRole("button", { name: "Move to Trash", exact: true })
+    .click();
+  await expect(
+    detail.getByRole("button", { name: "View photo 2", exact: true }),
+  ).toHaveCount(0);
+  await detail
+    .getByRole("button", { name: "Delete vehicle…", exact: true })
+    .click();
+  await page
+    .getByRole("dialog", { name: "Delete vehicle?", exact: true })
+    .getByRole("button", { name: "Move to Trash", exact: true })
+    .click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await nav.getByRole("button", { name: "Trash", exact: true }).click();
+  const row = page
+    .locator(".setting-row")
+    .filter({ hasText: "REVISION-TRAINING" })
+    .first();
+  await expect(row).toBeVisible();
+  await row.getByRole("button", { name: "Restore", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("Restored");
+  await nav
+    .getByRole("button", { name: "Training Library", exact: true })
+    .click();
+  await expect(
+    page
+      .locator(".vehicle-card:visible")
+      .filter({ hasText: "REVISION-TRAINING" }),
+  ).toHaveCount(1);
+  expect(errors).toEqual([]);
+});

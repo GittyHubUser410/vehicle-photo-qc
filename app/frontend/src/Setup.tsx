@@ -21,6 +21,7 @@ export function Setup({
   reload: () => void;
   notify: Notify;
 }) {
+  const [shotName, setShotName] = useState("");
   const [dealer, setDealer] = useState<Dealer | "new" | null>(null);
   const [group, setGroup] = useState<Group | "new" | null>(null);
   const [photographer, setPhotographer] = useState<{
@@ -145,6 +146,49 @@ export function Setup({
           ))}
         </section>
       </div>
+      <section className="panel">
+        <h2>Shot types</h2>
+        <p>
+          Shared across uploads, training, and dealership rules. Existing
+          categories remain available for older records and models.
+        </p>
+        <form
+          className="button-row"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            setBusy(true);
+            try {
+              await send("/shot-types", "POST", { name: shotName });
+              setShotName("");
+              reload();
+              notify("Shot type added.");
+            } catch (e) {
+              notify((e as Error).message, true);
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          <Field title="New shot type">
+            <input
+              required
+              maxLength={150}
+              value={shotName}
+              onChange={(e) => setShotName(e.target.value)}
+            />
+          </Field>
+          <button
+            className="button secondary"
+            disabled={busy || !shotName.trim()}
+          >
+            Add shot type
+          </button>
+        </form>
+        <details>
+          <summary>Available categories ({config.shot_types.length})</summary>
+          <p>{config.shot_types.map(label).join(" · ")}</p>
+        </details>
+      </section>
       {dealer && (
         <DealerEditor
           dealer={dealer}
@@ -509,6 +553,64 @@ function RulesEditor({
                 Banner guides are previews. Vehicle segmentation, critical-crop
                 detection, and angle analysis still need trained components.
               </div>
+            )}
+            {section === "Banner & angle setup" && (
+              <>
+                <div className="rule-row">
+                  <div>
+                    <strong>Banner application</strong>
+                    <p>Choose which photos reserve banner space.</p>
+                    <small>{source("banner_application")}</small>
+                  </div>
+                  <select
+                    aria-label="Banner application"
+                    disabled={!("banner_application" in value)}
+                    value={effective.banner_application}
+                    onChange={(e) =>
+                      set(
+                        "banner_application",
+                        e.target.value as Rules["banner_application"],
+                      )
+                    }
+                  >
+                    <option value="none">None</option>
+                    <option value="first">First photo only</option>
+                    <option value="all">All applicable photos</option>
+                  </select>
+                  {controls("banner_application")}
+                </div>
+                <div className="rule-row">
+                  <div>
+                    <strong>Applicable banner shot types</strong>
+                    <p>
+                      Leave all unselected to apply to every shot type. Hold
+                      Ctrl or Command to select multiple.
+                    </p>
+                    <small>{source("banner_shot_types")}</small>
+                  </div>
+                  <select
+                    multiple
+                    aria-label="Applicable banner shot types"
+                    disabled={!("banner_shot_types" in value)}
+                    value={effective.banner_shot_types || []}
+                    onChange={(e) =>
+                      set(
+                        "banner_shot_types",
+                        Array.from(e.target.selectedOptions, (o) => o.value),
+                      )
+                    }
+                  >
+                    {shotTypes
+                      .filter((s) => s !== "unknown")
+                      .map((s) => (
+                        <option key={s} value={s}>
+                          {label(s)}
+                        </option>
+                      ))}
+                  </select>
+                  {controls("banner_shot_types")}
+                </div>
+              </>
             )}
             {numericRules
               .filter((r) => r.group === section)

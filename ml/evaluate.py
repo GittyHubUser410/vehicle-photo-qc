@@ -23,7 +23,7 @@ def main():
         dataset = session.get(Dataset, model.dataset_id)
         if not dataset:
             parser.error("The model's dataset is missing.")
-        _, entries = read_manifest(resolved_file(data, dataset.manifest_key), data)
+        _, entries = read_manifest(resolved_file(data, dataset.manifest_key), data, respect_trash=False)
         test = [e for e in entries if e["split"] == "test"]
         if not test:
             parser.error("This snapshot contains no test examples.")

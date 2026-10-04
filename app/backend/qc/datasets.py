@@ -11,7 +11,7 @@ def export_dataset(session, data, seed=42):
         select(TrainingExample, Photo, Shoot)
         .join(Photo, TrainingExample.photo_id == Photo.id)
         .join(Shoot, Photo.shoot_id == Shoot.id)
-        .where(TrainingExample.eligible.is_(True))
+        .where(TrainingExample.eligible.is_(True), Shoot.training_deleted_at.is_(None))
         .order_by(Shoot.id, Photo.position)
     ).all()
     if not rows:

@@ -22,6 +22,9 @@ export function Detail({
   id,
   initialPhoto,
   initialReview,
+  scope,
+  clipboard,
+  onCopy,
   config,
   close,
   notify,
@@ -30,6 +33,9 @@ export function Detail({
   id: string;
   initialPhoto?: string;
   initialReview?: string;
+  scope: "all" | "training";
+  clipboard: Record<string, string> | null;
+  onCopy: (labels: Record<string, string>) => void;
   config: Config;
   close: () => void;
   notify: Notify;
@@ -40,6 +46,9 @@ export function Detail({
   const [reviewId, setReviewId] = useState(initialReview || "");
   const [error, setError] = useState("");
   const [refresh, setRefresh] = useState(0);
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [targets, setTargets] = useState<string[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [banner, setBanner] = useState(false);
   const [busy, setBusy] = useState(false);
   const reload = () => {
@@ -50,15 +59,21 @@ export function Detail({
     const abort = new AbortController();
     api<ShootDetail>(`/shoots/${id}`, { signal: abort.signal })
       .then((d) => {
+        if (scope === "training") {
+          d.photos = d.photos.filter((p) => p.training);
+          d.photo_count = d.photos.length;
+        }
         setData(d);
-        setSelected((s) => s || d.photos[0]?.id || "");
+        setSelected((s) =>
+          d.photos.some((p) => p.id === s) ? s : d.photos[0]?.id || "",
+        );
         setError("");
       })
       .catch((e) => {
         if (e.name !== "AbortError") setError(e.message);
       });
     return () => abort.abort();
-  }, [id, refresh]);
+  }, [id, refresh, scope]);
   useEffect(() => {
     if (!data || !["queued", "processing"].includes(data.status)) return;
     const timer = setTimeout(() => setRefresh((v) => v + 1), 1500);
@@ -94,6 +109,128 @@ export function Detail({
       onClose={close}
       wide
     >
+      {pasteOpen && data && clipboard && (
+        <Modal title="Paste settings" onClose={() => setPasteOpen(false)}>
+          <p>
+            Copy quality labels and note to selected photos. Both shot types
+            stay unchanged. Pasted photos must be approved again before
+            training.
+          </p>
+          <div className="button-row">
+            <button
+              className="button secondary"
+              onClick={() => setTargets(data.photos.map((p) => p.id))}
+            >
+              Select all
+            </button>
+            <button className="button secondary" onClick={() => setTargets([])}>
+              Clear selection
+            </button>
+          </div>
+          <div className="paste-grid">
+            {data.photos.map((p) => (
+              <label key={p.id} className="paste-photo">
+                <input
+                  type="checkbox"
+                  checked={targets.includes(p.id)}
+                  onChange={(e) =>
+                    setTargets(
+                      e.target.checked
+                        ? [...targets, p.id]
+                        : targets.filter((id) => id !== p.id),
+                    )
+                  }
+                />
+                <img src={thumbnail(p.id)} alt="" />
+                <span>
+                  Photo {p.position} · {label(p.shot_type)}
+                </span>
+              </label>
+            ))}
+          </div>
+          <button
+            className="button primary"
+            disabled={busy || !targets.length}
+            onClick={async () => {
+              setBusy(true);
+              try {
+                await send("/training/paste", "POST", {
+                  labels: clipboard,
+                  targets: data.photos
+                    .filter((p) => targets.includes(p.id))
+                    .map((p) => ({
+                      photo_id: p.id,
+                      revision: p.training?.revision ?? null,
+                    })),
+                  actor: "Local reviewer",
+                });
+                setPasteOpen(false);
+                reload();
+                notify(
+                  "Settings pasted. Review and approve the updated labels before training.",
+                );
+              } catch (e) {
+                notify((e as Error).message, true);
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            Paste to {targets.length} photos
+          </button>
+        </Modal>
+      )}
+      {deleteTarget && (
+        <Modal
+          title={
+            deleteTarget === "vehicle" ? "Delete vehicle?" : "Delete photo?"
+          }
+          onClose={() => setDeleteTarget(null)}
+        >
+          <p>
+            {scope === "training"
+              ? "Remove from Training photo storage. Analysis records remain available."
+              : "Remove from the active library and future training."}{" "}
+            Files are retained in Trash and can be restored.
+          </p>
+          <div className="button-row">
+            <button
+              className="button secondary"
+              onClick={() => setDeleteTarget(null)}
+            >
+              Cancel
+            </button>
+            <button
+              className="button primary"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                try {
+                  await send(
+                    deleteTarget === "vehicle"
+                      ? `/shoots/${id}/trash`
+                      : `/photos/${deleteTarget}/trash`,
+                    "POST",
+                    { scope },
+                  );
+                  notify("Moved to Trash.");
+                  setDeleteTarget(null);
+                  if (deleteTarget === "vehicle") {
+                    changed();
+                    close();
+                  } else reload();
+                } catch (e) {
+                  notify((e as Error).message, true);
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              Move to Trash
+            </button>
+          </div>
+        </Modal>
+      )}
       {error && <ErrorBox message={error} />}
       {!data ? (
         <div className="loading">Loading shoot…</div>
@@ -138,6 +275,24 @@ export function Detail({
           <div className="detail-actions">
             <button
               className="button secondary"
+              disabled={pending || busy || !clipboard || !data.photos.length}
+              onClick={() => {
+                setTargets(photo ? [photo.id] : []);
+                setPasteOpen(true);
+              }}
+            >
+              Paste settings…
+            </button>
+            <button
+              className="button secondary danger-text"
+              disabled={pending || busy}
+              onClick={() => setDeleteTarget("vehicle")}
+            >
+              Delete vehicle…
+            </button>
+
+            <button
+              className="button secondary"
               disabled={pending || busy}
               onClick={() => action(`/shoots/${id}/reanalyze`, "POST")}
             >
@@ -162,16 +317,16 @@ export function Detail({
                     src={`/api/photos/${photo.id}/original`}
                     alt={`Photo ${photo.position}: ${photo.original_filename}`}
                   />
-                  {banner && data.policy.rules.banner_top_pct > 0 && (
+                  {banner && photo.banner.applicable === true && (
                     <div
                       className="banner-guide"
-                      style={{ height: `${data.policy.rules.banner_top_pct}%` }}
+                      style={{ height: `${photo.banner.top_fraction * 100}%` }}
                     >
                       Reserved banner area
                       <div
                         className="clearance-guide"
                         style={{
-                          height: `${(data.policy.rules.banner_clearance_pct / data.policy.rules.banner_top_pct) * 100}%`,
+                          height: `${(photo.banner.clearance_fraction / photo.banner.top_fraction) * 100}%`,
                         }}
                       />
                     </div>
@@ -182,9 +337,13 @@ export function Detail({
                 </div>
                 {banner && (
                   <p className="form-note">
-                    Preview only · Top banner {data.policy.rules.banner_top_pct}
-                    % · Clearance {data.policy.rules.banner_clearance_pct}%. No
-                    automatic vehicle-overlap check yet.
+                    {photo.banner.applicable === true
+                      ? "Banner area applies to this photo."
+                      : photo.banner.applicable === null
+                        ? "Select a shot type to determine banner applicability."
+                        : "No reserved banner area applies to this photo."}{" "}
+                    Preview only; automatic vehicle-overlap detection is not
+                    available yet.
                   </p>
                 )}
                 <div className="photo-navigation">
@@ -293,6 +452,13 @@ export function Detail({
                     confidence
                   </p>
                 )}
+                <button
+                  className="button secondary danger-text"
+                  disabled={pending || busy}
+                  onClick={() => setDeleteTarget(photo.id)}
+                >
+                  Delete photo…
+                </button>
                 <h4>Detected concerns</h4>
                 {data.issues
                   .filter((i) => i.photo_id === photo.id || !i.photo_id)
@@ -339,6 +505,7 @@ export function Detail({
                     config={config}
                     notify={notify}
                     saved={reload}
+                    onCopy={onCopy}
                     next={() => {
                       if (index < data.photos.length - 1) {
                         setSelected(data.photos[index + 1].id);
@@ -435,6 +602,7 @@ function TrainingEditor({
   saved,
   next,
   hasNext,
+  onCopy,
 }: {
   photo: Photo;
   config: Config;
@@ -442,6 +610,7 @@ function TrainingEditor({
   saved: () => void;
   next: () => void;
   hasNext: boolean;
+  onCopy: (labels: Record<string, string>) => void;
 }) {
   const [labels, setLabels] = useState<Record<string, string>>({
     shot_type: photo.shot_type,
@@ -474,6 +643,9 @@ function TrainingEditor({
         <FlaskConical size={17} />
         <h4>Training labels</h4>
       </div>
+      <button className="button secondary" onClick={() => onCopy(labels)}>
+        Copy Settings
+      </button>
       <Field title="Training shot type">
         <select
           value={labels.shot_type || "unknown"}

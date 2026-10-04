@@ -17,8 +17,10 @@ from sqlalchemy import (
     UniqueConstraint,
     create_engine,
     event,
+    select,
+    or_,
 )
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker, Session, with_loader_criteria
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -88,6 +90,8 @@ class Shoot(Identity, Base):
     score: Mapped[float | None] = mapped_column(Float)
     current_run_id: Mapped[str | None] = mapped_column(String)
     checks: Mapped[dict] = mapped_column(JSON, default=dict)
+    deleted_at: Mapped[str | None] = mapped_column(String)
+    training_deleted_at: Mapped[str | None] = mapped_column(String)
 
 
 class Photo(Identity, Base):
@@ -103,6 +107,7 @@ class Photo(Identity, Base):
     byte_size: Mapped[int] = mapped_column(Integer)
     exif: Mapped[dict] = mapped_column(JSON, default=dict)
     shot_type: Mapped[str] = mapped_column(String, default="unknown", index=True)
+    deleted_at: Mapped[str | None] = mapped_column(String)
     __table_args__ = (UniqueConstraint("shoot_id", "position"),)
 
 
@@ -124,6 +129,7 @@ class Measurement(Identity, Base):
     metrics: Mapped[dict] = mapped_column(JSON)
     predicted_shot: Mapped[str | None] = mapped_column(String)
     confidence: Mapped[float | None] = mapped_column(Float)
+    context: Mapped[dict] = mapped_column(JSON, default=dict)
     __table_args__ = (UniqueConstraint("run_id", "photo_id"),)
 
 
@@ -169,6 +175,55 @@ class TrainingExample(Identity, Base):
     labeled_by: Mapped[str] = mapped_column(String, default="")
     updated_at: Mapped[str] = mapped_column(String, default=now)
     revision: Mapped[int] = mapped_column(Integer, default=0)
+    deleted_at: Mapped[str | None] = mapped_column(String)
+
+
+class ShotType(Base):
+    __tablename__ = "shot_types"
+    key: Mapped[str] = mapped_column(String(80), primary_key=True)
+    label: Mapped[str] = mapped_column(String(150), unique=True)
+    position: Mapped[int] = mapped_column(Integer)
+
+
+class DealerSequence(Base):
+    __tablename__ = "dealer_sequences"
+    dealership_id: Mapped[str] = mapped_column(ForeignKey("dealerships.id"), primary_key=True)
+    inventory_type: Mapped[str] = mapped_column(String, primary_key=True)
+    sequence: Mapped[list] = mapped_column(JSON)
+    rules_signature: Mapped[str] = mapped_column(String)
+    updated_at: Mapped[str] = mapped_column(String, default=now)
+
+
+class ActiveSession(Session):
+    """Default reads exclude trash; explicit trash/history operations opt in."""
+
+
+@event.listens_for(ActiveSession, "do_orm_execute")
+def active_records(state):
+    if (
+        not state.is_select
+        or state.session.info.get("include_deleted")
+        or state.execution_options.get("include_deleted")
+    ):
+        return
+    live_shoots = select(Shoot.id).where(Shoot.deleted_at.is_(None))
+    live_photos = select(Photo.id).where(Photo.deleted_at.is_(None), Photo.shoot_id.in_(live_shoots))
+    state.statement = state.statement.options(
+        with_loader_criteria(Shoot, Shoot.deleted_at.is_(None), include_aliases=True),
+        with_loader_criteria(Photo, Photo.deleted_at.is_(None), include_aliases=True),
+        with_loader_criteria(TrainingExample, TrainingExample.deleted_at.is_(None), include_aliases=True),
+        with_loader_criteria(
+            Review,
+            Review.shoot_id.in_(live_shoots)
+            & or_(Review.photo_id.is_(None), Review.photo_id.in_(live_photos)),
+            include_aliases=True,
+        ),
+        with_loader_criteria(
+            Issue,
+            Issue.shoot_id.in_(live_shoots) & or_(Issue.photo_id.is_(None), Issue.photo_id.in_(live_photos)),
+            include_aliases=True,
+        ),
+    )
 
 
 class LabelRevision(Identity, Base):
@@ -215,11 +270,18 @@ def initialize(data_dir: str | Path | None = None):
         connection.execute("PRAGMA journal_mode=WAL")
         connection.execute("PRAGMA busy_timeout=30000")
 
-    with engine.connect() as conn:
-        version = conn.exec_driver_sql("PRAGMA user_version").scalar()
-        if version not in (0, 1):
-            raise RuntimeError(f"Unsupported database schema {version}; use the matching app version.")
+    from .migrations import migrate
+
+    migrate(engine, data)
     Base.metadata.create_all(engine)
     with engine.begin() as conn:
-        conn.exec_driver_sql("PRAGMA user_version=1")
-    return data, engine, sessionmaker(engine, expire_on_commit=False)
+        conn.exec_driver_sql("PRAGMA user_version=2")
+    factory = sessionmaker(engine, class_=ActiveSession, expire_on_commit=False)
+    from .catalog import SHOT_CATALOG
+
+    with factory() as session:
+        for position, (key, label) in enumerate(SHOT_CATALOG):
+            if session.get(ShotType, key) is None:
+                session.add(ShotType(key=key, label=label, position=position))
+        session.commit()
+    return data, engine, factory

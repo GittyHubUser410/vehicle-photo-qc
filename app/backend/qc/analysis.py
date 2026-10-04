@@ -10,6 +10,7 @@ from sqlalchemy import select
 
 from .db import Issue, Measurement, ModelVersion, Photo, Review, Run, Shoot, now
 from .media import resolved_file
+from .banner import banner_region, banner_overlap
 
 PIPELINE_VERSION = "technical-baseline-0.1"
 LOG = logging.getLogger(__name__)
@@ -127,7 +128,7 @@ def analyze_shoot(factory, data, shoot_id: str):
                 select(Photo).where(Photo.shoot_id == shoot.id).order_by(Photo.position)
             ).all()
             scores, shot_types, computed = [], [], []
-            for photo in photos:
+            for rank, photo in enumerate(photos, 1):
                 path = resolved_file(data, photo.original_key)
                 metrics, score, findings = technical_metrics(path, shoot.policy["rules"])
                 predicted, confidence = None, None
@@ -142,17 +143,20 @@ def analyze_shoot(factory, data, shoot_id: str):
                     if photo.shot_type != "unknown"
                     else (predicted if confidence and confidence >= 0.8 else "unknown")
                 )
-                computed.append((photo.id, metrics, score, predicted, confidence, findings))
+                region = banner_region(shoot.policy["rules"], rank, shot_types[-1])
+                context = {"banner": region, "banner_overlap": banner_overlap(region)}
+                computed.append((photo.id, metrics, score, predicted, confidence, findings, context))
                 scores.append(score)
             # Keep expensive image/model work outside the SQLite write transaction so
             # reviewers can keep saving notes while a large shoot is being analyzed.
-            for photo_id, metrics, score, predicted, confidence, findings in computed:
+            for photo_id, metrics, score, predicted, confidence, findings, context in computed:
                 session.add(
                     Measurement(
                         run_id=run.id,
                         photo_id=photo_id,
                         score=score,
                         metrics=metrics,
+                        context=context,
                         predicted_shot=predicted,
                         confidence=confidence,
                     )

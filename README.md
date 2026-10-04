@@ -44,6 +44,8 @@ $env:QC_DATA_DIR = "D:\VehiclePhotoQC\data"
 
 This setting applies to the current PowerShell session. Use the same folder on later starts. An empty folder starts a new library; changing the variable does not migrate an existing library. The example `.env.example` is reference material, not automatically loaded.
 
+See [the incremental upgrade notes](docs/REVISION-UPGRADE.md) for automatic data migration, faster labeling, remembered sequences, and Trash.
+
 ## Your first session
 
 1. Open **Dealership Setup**. Rename the three placeholder dealerships and sample conglomerate. Add your photographers. Configure new and used standards separately. The placeholders have no required-shot list or minimum count until you set them.
@@ -68,7 +70,7 @@ See [TRAINING.md](docs/TRAINING.md) for collection guidance, dataset exports, an
 | Dealership setup | Conglomerate inheritance, per-dealer overrides, separate new/used rules, versioned import-time snapshots |
 | Technical analysis | OpenCV sharpness, exposure/clipping, saturation estimates; real measurements, not generated demo scores |
 | Required shots | Count rules; missing shots and ordered-subsequence checks once every photo has a usable shot type |
-| Banner | Configurable top-area and clearance guide over the photo; visual preview only |
+| Banner | None / first photo / applicable photos, category scope, and clearance guide; geometry detection remains unavailable |
 | ML foundation | Optional ResNet18 shot-classifier training, per-class validation metrics, holdout evaluation, manual activation |
 | Storage | SQLite with WAL and foreign keys, immutable original files, persistent processing state, restart recovery |
 | UI | Desktop sidebar, mobile navigation, responsive cards and full-screen phone details |

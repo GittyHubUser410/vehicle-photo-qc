@@ -2,7 +2,7 @@
 
 ## What this model learns
 
-The included optional model classifies **shot type**: front, rear, driver profile, passenger profile, the four three-quarter views, interior, dashboard, odometer, cargo, engine, wheel, detail, and other.
+The included optional model classifies **shot type** from the approved examples in its dataset. The expanded shared shot catalog includes exterior, interior, controls, detail categories, and legacy labels. Existing models retain their original vocabulary; adding categories does not retrain or alter them.
 
 It does **not** learn crop quality, angle acceptability, plastic, or overall dealership quality. The app collects those labels now so specialized models can be added later without relabeling everything. The initial sharpness/exposure/saturation checks remain image-processing heuristics.
 
@@ -12,7 +12,7 @@ It does **not** learn crop quality, angle acceptability, plastic, or overall dea
 2. Keep the same dealership/source and stock number for repeated shoots of the same vehicle. This helps keep that vehicle in a single data split. For outside sources, use a consistent source name and vehicle identifier in stock number. No VIN decoding or automatic vehicle identity matching is implemented.
 3. Label the shot type separately from its quality. A blurry front shot is still a front shot.
 4. Use driver/passenger relative to the vehicle, not to the image viewer. Record and consistently apply your policy for right-hand-drive vehicles before mixing them into training.
-5. Mark defect dimensions independently. Use **Unknown** if you have not inspected a dimension; absence of a label does not mean good.
+5. New examples default to **Good** to reduce entry. Inspect these defaults before approval. Copy Settings and bulk paste preserve shot types, but clear approval. Mark defect dimensions independently. Use **Unknown** if you have not inspected a dimension; absence of a label does not mean good.
 6. Add environmental context where practical: lighting, wet/snow/dry ground, and location. Season defaults to Northern Hemisphere meteorological season by shoot date and can be overridden at import.
 7. Check **Approved for training** only after reviewing the label. Changing a prediction does not silently approve training data.
 
@@ -29,6 +29,8 @@ Click **Export approved dataset** in Training Library. A JSON manifest is saved 
 - The trainer verifies file hashes, checks for split leakage, rejects contradictory labels on identical bytes, and removes exact duplicate images before training.
 
 Perceptually similar/recompressed images and vehicles entered under different identities are **not** automatically detected. Review the collection for those before training. Do not move individual photographs across splits to make the ratios look better.
+
+Trashed photos are excluded from new exports and future training runs, including runs using older manifests against the current data directory. Restore and review them if they should be included again. Existing holdout evaluation uses the unchanged historical snapshot.
 
 **Use the same saved manifest when comparing model candidates.** New exports are new snapshots; adding data or connecting previously separate groups can change split assignment. Do not use a regenerated snapshot as though it were the same held-out benchmark. Long-term locked test-cohort management is a future feature.
 

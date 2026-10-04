@@ -20,11 +20,19 @@ import {
   AlertTriangle,
   TrendingUp,
 } from "lucide-react";
-import { api, localDate, send, thumbnail, useStored } from "./api";
+import {
+  api,
+  setShotLabels,
+  localDate,
+  send,
+  thumbnail,
+  useStored,
+} from "./api";
 import { Badge, Empty, ErrorBox, Modal, VehicleCard } from "./ui";
 import { Upload } from "./Upload";
 import { Browse, ReviewQueue } from "./Browse";
 import { Detail } from "./Detail";
+import { Trash } from "./Trash";
 import { Setup } from "./Setup";
 import type { Config, DashboardData, Notify, Page } from "./types";
 
@@ -78,6 +86,12 @@ const pages: {
     description: "Manage your stores, people, and photography standards.",
   },
   {
+    id: "trash",
+    title: "Trash",
+    icon: Images,
+    description: "Restore deleted vehicles and photos.",
+  },
+  {
     id: "models",
     title: "Models & Help",
     icon: Settings2,
@@ -97,7 +111,11 @@ export default function App() {
     id: string;
     photo?: string;
     review?: string;
+    scope: "all" | "training";
   } | null>(null);
+  const [clipboard, setClipboard] = useState<Record<string, string> | null>(
+    null,
+  );
   const [trainingUpload, setTrainingUpload] = useState(false);
   const [menu, setMenu] = useState(false);
   const [toast, setToast] = useState<{
@@ -118,10 +136,16 @@ export default function App() {
     setMenu(false);
   };
   const open = (id: string, photo?: string, review?: string) =>
-    setDetail({ id, photo, review });
+    setDetail({
+      id,
+      photo,
+      review,
+      scope: page === "training" ? "training" : "all",
+    });
   useEffect(() => {
     api<Config>("/config")
       .then((c) => {
+        setShotLabels(c.shot_type_labels);
         setConfig(c);
         setConnectionError("");
       })
@@ -300,6 +324,7 @@ export default function App() {
               </section>
               <section hidden={page !== "evaluate"}>
                 <Upload
+                  active={page === "evaluate"}
                   config={config}
                   notify={notify}
                   done={(id) => {
@@ -340,6 +365,14 @@ export default function App() {
                 <Setup
                   config={config}
                   reload={() => setConfigVersion((v) => v + 1)}
+                  notify={notify}
+                />
+              </section>
+              <section hidden={page !== "trash"}>
+                <Trash
+                  active={page === "trash"}
+                  refresh={refresh}
+                  changed={changed}
                   notify={notify}
                 />
               </section>
@@ -389,6 +422,14 @@ export default function App() {
         <Detail
           key={detail.id}
           id={detail.id}
+          scope={detail.scope}
+          clipboard={clipboard}
+          onCopy={(labels) => {
+            setClipboard({ ...labels });
+            notify(
+              "Settings copied. Shot types will be preserved when pasted.",
+            );
+          }}
           initialPhoto={detail.photo}
           initialReview={detail.review}
           config={config}

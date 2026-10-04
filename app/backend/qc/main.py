@@ -12,6 +12,16 @@ from sqlalchemy.exc import IntegrityError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from .analysis import Worker
+from .banner import banner_region, banner_overlap
+from .catalog import good_labels
+from .workflows import (
+    validate_rules,
+    validate_shots,
+    suggested_sequence,
+    remember_sequence,
+    change_labels,
+    training_example,
+)
 from .datasets import export_dataset
 from .db import (
     ROOT,
@@ -29,6 +39,7 @@ from .db import (
     Run,
     Shoot,
     TrainingExample,
+    ShotType,
     initialize,
     now,
     uid,
@@ -36,7 +47,6 @@ from .db import (
 from .media import MAX_BATCH_BYTES, prepare_image, resolved_file
 from .schemas import (
     DEFAULT_RULES,
-    SHOT_TYPES,
     DealerInput,
     GroupInput,
     ImportInput,
@@ -55,6 +65,8 @@ def required(session, cls, item_id):
     obj = session.get(cls, item_id)
     if obj is None:
         raise HTTPException(404, "Item not found")
+    if cls is Photo and session.get(Shoot, obj.shoot_id) is None:
+        raise HTTPException(404, "Vehicle is in Trash")
     return obj
 
 
@@ -155,13 +167,15 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
                 "photographers": [
                     serialize(x) for x in session.scalars(select(Photographer).order_by(Photographer.name))
                 ],
-                "shot_types": SHOT_TYPES,
+                "shot_types": list(session.scalars(select(ShotType.key).order_by(ShotType.position))),
+                "shot_type_labels": {x.key: x.label for x in session.scalars(select(ShotType))},
                 "default_rules": DEFAULT_RULES,
             }
 
     @app.post("/api/groups", status_code=201)
     def add_group(body: GroupInput):
         with factory() as session:
+            validate_rules(session, body.rules)
             obj = Group(**body.model_dump())
             session.add(obj)
             session.commit()
@@ -171,6 +185,7 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
     def edit_group(item_id: str, body: GroupInput):
         with factory() as session:
             obj = required(session, Group, item_id)
+            validate_rules(session, body.rules)
             obj.name, obj.rules = body.name, body.rules
             obj.version += 1
             session.commit()
@@ -179,6 +194,8 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
     @app.post("/api/dealerships", status_code=201)
     def add_dealer(body: DealerInput):
         with factory() as session:
+            validate_rules(session, body.new_rules)
+            validate_rules(session, body.used_rules)
             if body.group_id:
                 required(session, Group, body.group_id)
             obj = Dealer(**body.model_dump())
@@ -190,6 +207,8 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
     def edit_dealer(item_id: str, body: DealerInput):
         with factory() as session:
             obj = required(session, Dealer, item_id)
+            validate_rules(session, body.new_rules)
+            validate_rules(session, body.used_rules)
             if body.group_id:
                 required(session, Group, body.group_id)
             for key, val in body.model_dump().items():
@@ -228,7 +247,16 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
                 if body.photographer_id:
                     required(session, Photographer, body.photographer_id)
                 policy = policy_for(session, body.dealership_id, body.inventory_type)
-                values = body.model_dump(exclude={"season"}, mode="json")
+                values = body.model_dump(exclude={"season", "shot_types"}, mode="json")
+                sequence = body.shot_types
+                if sequence is not None and len(sequence) != len(files):
+                    raise HTTPException(422, "One shot type is required for each uploaded photo.")
+                if sequence is None:
+                    suggested = suggested_sequence(session, body.dealership_id, body.inventory_type, policy)[
+                        "sequence"
+                    ]
+                    sequence = [suggested[i] if i < len(suggested) else "unknown" for i in range(len(files))]
+                validate_shots(session, sequence)
                 if body.mode == "general" and body.purpose == "training" and not body.source:
                     values["source"] = "Stage Now"
                 month = body.shoot_date.month
@@ -263,14 +291,20 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
                         shoot_id=shoot.id,
                         position=position,
                         original_filename=filename,
+                        shot_type=sequence[position - 1],
                         **details,
                     )
                     session.add(photo)
                     session.flush()
                     if body.purpose == "training":
                         session.add(
-                            TrainingExample(photo_id=photo.id, origin=values["source"] or "dedicated_upload")
+                            TrainingExample(
+                                photo_id=photo.id,
+                                origin=values["source"] or "dedicated_upload",
+                                labels=good_labels(photo.shot_type),
+                            )
                         )
+                remember_sequence(session, shoot, policy)
                 session.commit()
                 return {"id": shoot.id, "status": shoot.status, "photo_count": len(files)}
             except Exception as exc:
@@ -284,12 +318,15 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
                 for upload in files:
                     upload.file.close()
 
-    def summary(session, shoot):
+    def summary(session, shoot, training_only=False):
         dealer = session.get(Dealer, shoot.dealership_id) if shoot.dealership_id else None
         photographer = session.get(Photographer, shoot.photographer_id) if shoot.photographer_id else None
         photos = session.scalars(
             select(Photo).where(Photo.shoot_id == shoot.id).order_by(Photo.position)
         ).all()
+        if training_only:
+            active_ids = set(session.scalars(select(TrainingExample.photo_id)))
+            photos = [p for p in photos if p.id in active_ids]
         open_count = session.scalar(
             select(func.count())
             .select_from(Review)
@@ -338,6 +375,7 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
         with factory() as session:
             stmt = select(Shoot)
             if purpose == "training":
+                stmt = stmt.where(Shoot.training_deleted_at.is_(None))
                 training_ids = select(Photo.shoot_id).join(
                     TrainingExample, TrainingExample.photo_id == Photo.id
                 )
@@ -397,7 +435,7 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
                 "stock": Shoot.stock_number.asc(),
             }.get(sort, Shoot.created_at.desc())
             shoots = session.scalars(stmt.order_by(ordering, Shoot.id).offset(offset).limit(limit)).all()
-            return {"items": [summary(session, s) for s in shoots], "total": total}
+            return {"items": [summary(session, s, purpose == "training") for s in shoots], "total": total}
 
     @app.get("/api/shoots/{shoot_id}")
     def shoot_detail(shoot_id: str):
@@ -422,9 +460,14 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
                     serialize(photo)
                     | {
                         "analysis": measurements.get(photo.id),
-                        "training": serialize(training) if training else None,
+                        "training": serialize(training)
+                        if training and not shoot.training_deleted_at
+                        else None,
                     }
                 )
+            for rank, photo in enumerate(photos, 1):
+                region = banner_region(shoot.policy["rules"], rank, photo["shot_type"])
+                photo["banner"] = {**region, "check": banner_overlap(region)}
             return summary(session, shoot) | {
                 "photos": photos,
                 "issues": [
@@ -493,26 +536,36 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
             shoot = required(session, Shoot, photo.shoot_id)
             if shoot.status in ("queued", "processing"):
                 raise HTTPException(409, "Wait for analysis to finish before changing shot types.")
+            validate_shots(session, [body.shot_type])
+            if photo.shot_type != body.shot_type:
+                example = session.scalar(select(TrainingExample).where(TrainingExample.photo_id == photo.id))
+                if example and not shoot.training_deleted_at:
+                    change_labels(session, example, {**example.labels, "shot_type": body.shot_type})
             photo.shot_type = body.shot_type
             shoot.checks = {**shoot.checks, "required_shots": "needs_reanalysis"}
+            session.flush()
+            remember_sequence(session, shoot, policy_for(session, shoot.dealership_id, shoot.inventory_type))
             session.commit()
             return serialize(photo)
 
     @app.post("/api/photos/{photo_id}/training")
     def promote(photo_id: str):
         with factory() as session:
-            required(session, Photo, photo_id)
-            example = session.scalar(select(TrainingExample).where(TrainingExample.photo_id == photo_id))
-            if not example:
-                example = TrainingExample(photo_id=photo_id, origin="operational_photo")
-                session.add(example)
-                session.commit()
+            photo = required(session, Photo, photo_id)
+            shoot = required(session, Shoot, photo.shoot_id)
+            if shoot.training_deleted_at:
+                raise HTTPException(409, "This vehicle's training membership is in Trash. Restore it first.")
+            example = training_example(session, photo)
+            session.commit()
             return serialize(example)
 
     @app.put("/api/photos/{photo_id}/training")
     def save_labels(photo_id: str, body: LabelInput):
         with factory() as session:
-            required(session, Photo, photo_id)
+            photo = required(session, Photo, photo_id)
+            if required(session, Shoot, photo.shoot_id).training_deleted_at:
+                raise HTTPException(409, "This training vehicle is in Trash.")
+            validate_shots(session, [body.labels.shot_type])
             example = session.scalar(select(TrainingExample).where(TrainingExample.photo_id == photo_id))
             if not example:
                 raise HTTPException(404, "Add this photo to Training first.")
@@ -682,11 +735,19 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
                 "review_count": reviews,
                 "severe_count": severe,
                 "unviewed_count": unviewed,
-                "training_count": session.scalar(select(func.count()).select_from(TrainingExample)),
+                "training_count": session.scalar(
+                    select(func.count())
+                    .select_from(TrainingExample)
+                    .join(Photo, TrainingExample.photo_id == Photo.id)
+                    .join(Shoot, Photo.shoot_id == Shoot.id)
+                    .where(Shoot.training_deleted_at.is_(None))
+                ),
                 "approved_count": session.scalar(
                     select(func.count())
                     .select_from(TrainingExample)
-                    .where(TrainingExample.eligible.is_(True))
+                    .join(Photo, TrainingExample.photo_id == Photo.id)
+                    .join(Shoot, Photo.shoot_id == Shoot.id)
+                    .where(TrainingExample.eligible.is_(True), Shoot.training_deleted_at.is_(None))
                 ),
                 "recent_photos": [
                     {"id": p.id, "shoot_id": s.id, "stock": s.stock_number, "position": p.position}
@@ -755,6 +816,10 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
             )
             session.commit()
             return {"status": "manual_only"}
+
+    from .workflow_routes import register_workflow_routes
+
+    register_workflow_routes(app, factory, policy_for, required)
 
     dist = ROOT / "app" / "frontend" / "dist"
     if dist.is_dir():

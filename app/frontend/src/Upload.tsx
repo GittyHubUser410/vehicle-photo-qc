@@ -9,18 +9,20 @@ import {
   Check,
   GripVertical,
 } from "lucide-react";
-import { localDate, uploadPhotos, useStored } from "./api";
+import { api, label, localDate, uploadPhotos, useStored } from "./api";
 import { ErrorBox, Field } from "./ui";
 import type { Config, Notify, OpenDetail } from "./types";
 
-type Picked = { id: string; file: File; url: string };
+type Picked = { id: string; file: File; url: string; shot?: string };
 export function Upload({
   config,
+  active = true,
   training = false,
   notify,
   done,
 }: {
   config: Config;
+  active?: boolean;
   training?: boolean;
   notify: Notify;
   done: OpenDetail;
@@ -54,6 +56,39 @@ export function Upload({
   });
   const [form, setForm] = useState(blank);
   const [photos, setPhotos] = useState<Picked[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [suggestion, setSuggestion] = useState<{
+    sequence: string[];
+    source: string;
+  }>({ sequence: [], source: "" });
+  const [sequenceBusy, setSequenceBusy] = useState(false);
+  const [sequenceVersion, setSequenceVersion] = useState(0);
+  useEffect(() => {
+    if (!active) return;
+    const abort = new AbortController();
+    setSequenceBusy(true);
+    api<{ sequence: string[]; source: string }>(
+      `/sequence?${new URLSearchParams({ dealership_id: mode === "dealership" ? dealer : "", inventory_type: inventory || "used" })}`,
+      { signal: abort.signal },
+    )
+      .then(setSuggestion)
+      .catch((e) => {
+        if (e.name !== "AbortError") setError(e.message);
+      })
+      .finally(() => {
+        if (!abort.signal.aborted) setSequenceBusy(false);
+      });
+    return () => abort.abort();
+  }, [active, dealer, inventory, mode, config, sequenceVersion]);
+  const shotAt = (p: Picked, i: number) =>
+    p.shot ?? suggestion.sequence[i] ?? "unknown";
+  function removeSelected() {
+    photos
+      .filter((p) => selectedIds.includes(p.id))
+      .forEach((p) => URL.revokeObjectURL(p.url));
+    setPhotos((prev) => prev.filter((p) => !selectedIds.includes(p.id)));
+    setSelectedIds([]);
+  }
   const photosRef = useRef(photos);
   photosRef.current = photos;
   const input = useRef<HTMLInputElement>(null);
@@ -108,6 +143,7 @@ export function Upload({
     const p = photos.find((p) => p.id === id);
     if (p) URL.revokeObjectURL(p.url);
     setPhotos((prev) => prev.filter((p) => p.id !== id));
+    setSelectedIds((prev) => prev.filter((x) => x !== id));
   }
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -119,6 +155,7 @@ export function Upload({
       const result = await uploadPhotos(
         {
           ...form,
+          shot_types: photos.map(shotAt),
           year: form.year ? Number(form.year) : null,
           season: form.season || null,
           dealership_id: mode === "dealership" ? dealer || null : null,
@@ -136,6 +173,8 @@ export function Upload({
       );
       photos.forEach((p) => URL.revokeObjectURL(p.url));
       setPhotos([]);
+      setSelectedIds([]);
+      setSequenceVersion((v) => v + 1);
       setForm(blank());
       notify(
         training
@@ -430,6 +469,34 @@ export function Upload({
                 The numbered order below is the saved order. Drag to rearrange,
                 or use the arrow buttons on a phone.
               </p>
+              <div className="batch-actions">
+                <span className="form-note">
+                  {sequenceBusy ? "Loading sequence…" : suggestion.source}.
+                  Unassigned beyond its length.
+                </span>
+                <button
+                  type="button"
+                  className="text-button"
+                  onClick={() => setSelectedIds(photos.map((p) => p.id))}
+                >
+                  Select all
+                </button>
+                <button
+                  type="button"
+                  className="text-button"
+                  onClick={() => setSelectedIds([])}
+                >
+                  Clear selection
+                </button>
+                <button
+                  type="button"
+                  className="button secondary"
+                  disabled={!selectedIds.length}
+                  onClick={removeSelected}
+                >
+                  Remove selected ({selectedIds.length})
+                </button>
+              </div>
               <div className="import-tray">
                 {photos.map((p, i) => (
                   <div
@@ -476,6 +543,38 @@ export function Upload({
                       </button>
                     </div>
                     <small title={p.file.name}>{p.file.name}</small>
+                    <label className="checkbox">
+                      <input
+                        type="checkbox"
+                        aria-label={`Select pending photo ${i + 1}`}
+                        checked={selectedIds.includes(p.id)}
+                        onChange={(e) =>
+                          setSelectedIds((prev) =>
+                            e.target.checked
+                              ? [...prev, p.id]
+                              : prev.filter((x) => x !== p.id),
+                          )
+                        }
+                      />
+                      Select
+                    </label>
+                    <select
+                      aria-label={`Shot type for pending photo ${i + 1}`}
+                      value={shotAt(p, i)}
+                      onChange={(e) =>
+                        setPhotos((prev) =>
+                          prev.map((x) =>
+                            x.id === p.id ? { ...x, shot: e.target.value } : x,
+                          ),
+                        )
+                      }
+                    >
+                      {config.shot_types.map((key) => (
+                        <option value={key} key={key}>
+                          {label(key)}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 ))}
               </div>
@@ -490,7 +589,7 @@ export function Upload({
         </p>
         <button
           className="button primary"
-          disabled={busy || !photos.length}
+          disabled={busy || sequenceBusy || !photos.length}
           type="submit"
         >
           <UploadCloud size={18} />

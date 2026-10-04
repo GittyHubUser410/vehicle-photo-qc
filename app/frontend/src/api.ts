@@ -30,7 +30,12 @@ export const send = <T>(path: string, method: string, body?: unknown) =>
     method,
     body: body === undefined ? undefined : JSON.stringify(body),
   });
+let shotLabels: Record<string, string> = {};
+export const setShotLabels = (labels: Record<string, string>) => {
+  shotLabels = labels;
+};
 export const label = (value: string) =>
+  (value !== "unknown" && shotLabels[value]) ||
   value
     .replaceAll("_", " ")
     .replace(/\b\w/g, (c) => c.toUpperCase())

@@ -25,7 +25,7 @@ The app is single-process and local-only. Use `--workers 1`. There is no authent
 | `training_datasets` | Immutable manifest key, content hash, seed, exported example count |
 | `model_versions` | Model artifact key, dataset FK, class vocabulary, metrics and candidate/active/archived state |
 
-JSON is used for small evolving rule/metric/label payloads, not as a replacement for core relational fields. Schema version 1 is bootstrapped from SQLAlchemy metadata and stamped with SQLite `user_version`. Startup rejects unknown versions. `create_all` does not migrate existing columns; future schema changes require explicit migration code. A move to PostgreSQL requires a real data migration and transaction/concurrency review, not simply changing a connection string.
+JSON is used for small evolving rule/metric/label payloads, not as a replacement for core relational fields. Schema version 2 is stamped with SQLite `user_version`. Startup migrates version 1 additively with a database backup and rejects unknown versions. `migrations.py` owns explicit column changes; metadata creates new catalog/sequence tables. See [upgrade notes](REVISION-UPGRADE.md). A move to PostgreSQL requires a real data migration and transaction/concurrency review, not simply changing a connection string.
 
 Indexes cover shoot purpose/dealership/date, photographer, stock, photo hash/shot type, run IDs, issue kinds, and review resolution. Current list queries are paginated. The prototype retrieves per-shoot details for the current page; optimize that access pattern before very large libraries.
 

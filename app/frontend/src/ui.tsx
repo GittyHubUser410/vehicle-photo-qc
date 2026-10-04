@@ -104,7 +104,10 @@ export function Modal({
     <dialog
       ref={ref}
       className={`modal ${wide ? "wide" : ""}`}
-      onCancel={onClose}
+      onCancel={(event) => {
+        event.stopPropagation();
+        onClose();
+      }}
       aria-label={title}
     >
       <div className="modal-bar">

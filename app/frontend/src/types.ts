@@ -1,4 +1,6 @@
 export interface Rules {
+  banner_application: "none" | "first" | "all";
+  banner_shot_types: string[];
   blur_min: number;
   dark_max: number;
   bright_max: number;
@@ -38,6 +40,7 @@ export interface Config {
   dealerships: Dealer[];
   photographers: { id: string; name: string }[];
   shot_types: string[];
+  shot_type_labels: Record<string, string>;
   default_rules: Rules;
 }
 export interface Training {
@@ -49,6 +52,13 @@ export interface Training {
   updated_at: string;
 }
 export interface Photo {
+  banner: {
+    applicable: boolean | null;
+    mode: string;
+    check: string;
+    top_fraction: number;
+    clearance_fraction: number;
+  };
   id: string;
   shoot_id: string;
   position: number;
@@ -165,7 +175,8 @@ export type Page =
   | "library"
   | "training"
   | "dealerships"
-  | "models";
+  | "models"
+  | "trash";
 export type OpenDetail = (
   id: string,
   photoId?: string,
