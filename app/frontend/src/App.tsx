@@ -33,6 +33,7 @@ import { Upload } from "./Upload";
 import { Browse, ReviewQueue } from "./Browse";
 import { Detail } from "./Detail";
 import { Trash } from "./Trash";
+import { TrainingProgress } from "./TrainingProgress";
 import { Setup } from "./Setup";
 import type { Config, DashboardData, Notify, Page } from "./types";
 
@@ -311,6 +312,7 @@ export default function App() {
               <section hidden={page !== "dashboard"}>
                 <Dashboard
                   data={dashboard}
+                  refresh={refresh}
                   navigate={navigate}
                   open={(id, photo) => {
                     navigate("library");
@@ -348,6 +350,7 @@ export default function App() {
                         : navigate("evaluate")
                     }
                     notify={notify}
+                    changed={changed}
                   />
                 </section>
               ))}
@@ -420,7 +423,11 @@ export default function App() {
       </nav>
       {detail && config && (
         <Detail
-          key={detail.id}
+          key={`${detail.id}:${detail.scope}`}
+          openOriginal={(photo) => {
+            navigate("library");
+            setDetail({ ...detail, photo, scope: "all" });
+          }}
           id={detail.id}
           scope={detail.scope}
           clipboard={clipboard}
@@ -508,11 +515,13 @@ function Dashboard({
   navigate,
   open,
   serious,
+  refresh,
 }: {
   data: DashboardData | null;
   navigate: (p: Page) => void;
   open: (id: string, photo?: string) => void;
   serious: () => void;
+  refresh: number;
 }) {
   if (!data) return <div className="loading">Loading overview…</div>;
   return (
@@ -599,7 +608,10 @@ function Dashboard({
         ))}
       </div>
       <div className="dashboard-split">
-        <button className="serious-card" onClick={serious}>
+        <button
+          className={`serious-card ${data.review_count ? "" : "quiet"}`}
+          onClick={() => (data.severe_count ? serious() : navigate("review"))}
+        >
           <span className="serious-icon">
             <AlertTriangle size={23} />
           </span>
@@ -608,15 +620,19 @@ function Dashboard({
             <h2>
               {data.severe_count
                 ? `${data.severe_count} serious ${data.severe_count === 1 ? "issue" : "issues"} to review`
-                : "Serious issues, clearly in view"}
+                : data.review_count
+                  ? `${data.review_count} items awaiting review`
+                  : "Nothing to review"}
             </h2>
             <p>
               {data.severe_count
                 ? "Check the highlighted photos before they move on."
-                : "When serious concerns are detected, they appear here for a closer look."}
+                : data.review_count
+                  ? "Open the queue to check the remaining concerns."
+                  : "Upload some photos to evaluate."}
             </p>
             <strong>
-              Open priority review queue <ArrowRight size={17} />
+              Open review queue <ArrowRight size={17} />
             </strong>
           </div>
         </button>
@@ -642,6 +658,11 @@ function Dashboard({
           </button>
         </div>
       </div>
+      <TrainingProgress
+        refresh={refresh}
+        compact
+        open={() => navigate("training")}
+      />
       <div className="dashboard-bottom">
         <section>
           <div className="section-heading">
@@ -782,13 +803,14 @@ function Models({
               <li>Critical crop and exterior-angle judgments</li>
               <li>Automatic banner overlap checks</li>
               <li>Plastic, floor mats, and steering-wheel checks</li>
-              <li>Phone access over a network, accounts, HomeNet</li>
+              <li>Native mobile packaging and HomeNet integration</li>
             </ul>
           </div>
         </div>
         <p className="form-note">
-          This prototype is bound to your PC. The layout adapts to phone
-          screens, but external access is a separate deployment step.
+          Photos and models are stored on the hosting PC. Configured Cloudflare
+          Access allows authorized users to work from phones and other
+          computers.
         </p>
         <a
           className="button secondary"

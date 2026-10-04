@@ -10,6 +10,7 @@ import {
   GripVertical,
 } from "lucide-react";
 import { api, label, localDate, uploadPhotos, useStored } from "./api";
+import { ShotSelect } from "./ShotSelect";
 import { ErrorBox, Field } from "./ui";
 import type { Config, Notify, OpenDetail } from "./types";
 
@@ -571,23 +572,18 @@ export function Upload({
                       />
                       Select
                     </label>
-                    <select
-                      aria-label={`Shot type for pending photo ${i + 1}`}
+                    <ShotSelect
+                      title={`Shot type for pending photo ${i + 1}`}
                       value={shotAt(p, i)}
-                      onChange={(e) =>
+                      options={config.shot_types}
+                      onChange={(value) =>
                         setPhotos((prev) =>
                           prev.map((x) =>
-                            x.id === p.id ? { ...x, shot: e.target.value } : x,
+                            x.id === p.id ? { ...x, shot: value } : x,
                           ),
                         )
                       }
-                    >
-                      {config.shot_types.map((key) => (
-                        <option value={key} key={key}>
-                          {label(key)}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </div>
                 ))}
               </div>

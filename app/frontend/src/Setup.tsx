@@ -8,6 +8,7 @@ import {
   Trash2,
   Users,
 } from "lucide-react";
+import { ShotManager } from "./ShotManager";
 import { label, send } from "./api";
 import { Badge, Field, Modal } from "./ui";
 import type { Config, Dealer, Group, Notify, Rules } from "./types";
@@ -184,10 +185,7 @@ export function Setup({
             Add shot type
           </button>
         </form>
-        <details>
-          <summary>Available categories ({config.shot_types.length})</summary>
-          <p>{config.shot_types.map(label).join(" · ")}</p>
-        </details>
+        <ShotManager config={config} reload={reload} notify={notify} />
       </section>
       {dealer && (
         <DealerEditor

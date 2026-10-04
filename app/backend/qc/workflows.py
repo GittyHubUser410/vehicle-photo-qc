@@ -26,12 +26,17 @@ def sequence_signature(policy):
 
 
 def suggested_sequence(session, dealer_id, inventory, policy):
+    active = set(session.scalars(select(ShotType.key).where(ShotType.archived.is_(False))))
+
+    def clean(sequence):
+        return [key if key in active else "unknown" for key in sequence]
+
     memory = session.get(DealerSequence, (dealer_id, inventory)) if dealer_id else None
     if memory and memory.rules_signature == sequence_signature(policy):
-        return {"sequence": memory.sequence, "source": "Last-used dealership sequence"}
+        return {"sequence": clean(memory.sequence), "source": "Last-used dealership sequence"}
     configured = policy["rules"].get("required_shots", [])
     return {
-        "sequence": configured or DEFAULT_SEQUENCE,
+        "sequence": clean(configured or DEFAULT_SEQUENCE),
         "source": "Dealership-required sequence" if configured else "Default exterior sequence",
     }
 

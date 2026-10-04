@@ -11,7 +11,9 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { api, label, send, thumbnail, useStored, vehicleName } from "./api";
-import { Badge, Empty, ErrorBox, Field, VehicleCard } from "./ui";
+import { VehicleEditor } from "./VehicleEditor";
+import { TrainingProgress } from "./TrainingProgress";
+import { Badge, Empty, ErrorBox, Field, VehicleCard, Score } from "./ui";
 import type { Config, Notify, OpenDetail, Review, Shoot } from "./types";
 
 export function Browse({
@@ -22,6 +24,7 @@ export function Browse({
   open,
   upload,
   notify,
+  changed,
 }: {
   kind: "results" | "library" | "training";
   active: boolean;
@@ -30,7 +33,9 @@ export function Browse({
   open: OpenDetail;
   upload: () => void;
   notify: Notify;
+  changed: () => void;
 }) {
+  const [editing, setEditing] = useState<Shoot | null>(null);
   const defaults: Record<string, string> = {
     q: "",
     dealership_id: "",
@@ -135,6 +140,18 @@ export function Browse({
   }
   return (
     <>
+      {editing && (
+        <VehicleEditor
+          shoot={editing}
+          config={config}
+          notify={notify}
+          close={() => setEditing(null)}
+          saved={() => {
+            setEditing(null);
+            changed();
+          }}
+        />
+      )}
       {kind === "training" && (
         <div className="training-banner">
           <div>
@@ -159,6 +176,9 @@ export function Browse({
             </button>
           </div>
         </div>
+      )}
+      {kind === "training" && (
+        <TrainingProgress active={active} refresh={refresh} />
       )}
       {exported && (
         <div className="notice">
@@ -345,39 +365,71 @@ export function Browse({
       ) : kind === "library" ? (
         <div className="library-grid">
           {result.items.map((s) => (
-            <button
-              className="library-card"
+            <div
+              className={`library-card-wrap ${s.review_count ? "needs-attention" : ""}`}
               key={s.id}
-              onClick={() => open(s.id)}
             >
-              <div className="library-preview">
-                {s.previews[0] ? (
-                  <img
-                    src={thumbnail(s.previews[0].id)}
-                    alt={vehicleName(s)}
-                    loading="lazy"
-                  />
-                ) : (
-                  <Camera />
-                )}
-                <Badge>{s.photo_count} photos</Badge>
-              </div>
-              <div>
-                <span className="eyebrow">
-                  {s.stock_number || "No stock number"}
-                </span>
-                <h3>{vehicleName(s)}</h3>
-                <p>
-                  {s.dealership_name} · {s.shoot_date}
-                </p>
-              </div>
-            </button>
+              <button className="library-card" onClick={() => open(s.id)}>
+                <div className="library-preview">
+                  {s.previews[0] ? (
+                    <img
+                      src={thumbnail(s.previews[0].id)}
+                      alt={vehicleName(s)}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <Camera />
+                  )}
+                  <div className="library-overlay">
+                    <Badge>{s.photo_count} photos</Badge>
+                    <span>{s.shoot_date}</span>
+                    <strong>{s.dealership_name}</strong>
+                    <span className="inline">
+                      Technical <Score value={s.score} small />
+                    </span>
+                  </div>
+                  <div className="library-hover">
+                    <strong>
+                      {vehicleName(s)} · {s.stock_number}
+                    </strong>
+                    <span>{s.photographer_name}</span>
+                    <span>
+                      {label(s.lighting)} · {label(s.ground)} ·{" "}
+                      {label(s.season)}
+                    </span>
+                    <span>
+                      {s.review_count
+                        ? `${s.review_count} open reviews`
+                        : "No open reviews"}
+                    </span>
+                    {s.concerns?.slice(0, 2).map((c, i) => (
+                      <small key={i}>{c}</small>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <span className="eyebrow">
+                    {s.stock_number || "No stock number"}
+                  </span>
+                  <h3>{vehicleName(s)}</h3>
+                  <p>
+                    {s.review_count
+                      ? `${s.review_count} awaiting review`
+                      : "No open reviews"}
+                  </p>
+                </div>
+              </button>
+              <VehicleMenu shoot={s} edit={() => setEditing(s)} />
+            </div>
           ))}
         </div>
       ) : (
         <div className="vehicle-list">
           {result.items.map((s) => (
-            <VehicleCard key={s.id} shoot={s} open={open} />
+            <div className="vehicle-card-wrap" key={s.id}>
+              <VehicleCard shoot={s} open={open} />
+              <VehicleMenu shoot={s} edit={() => setEditing(s)} />
+            </div>
           ))}
         </div>
       )}
@@ -624,5 +676,27 @@ export function ReviewQueue({
       )}
       <Pagination offset={offset} total={result.total} setOffset={setOffset} />
     </>
+  );
+}
+
+function VehicleMenu({ shoot, edit }: { shoot: Shoot; edit: () => void }) {
+  return (
+    <details className="vehicle-menu">
+      <summary
+        aria-label={`Vehicle options for ${shoot.stock_number || shoot.id}`}
+      >
+        •••
+      </summary>
+      <button
+        className="button secondary"
+        disabled={["queued", "processing"].includes(shoot.status)}
+        onClick={(e) => {
+          e.currentTarget.closest("details")?.removeAttribute("open");
+          edit();
+        }}
+      >
+        Edit vehicle
+      </button>
+    </details>
   );
 }

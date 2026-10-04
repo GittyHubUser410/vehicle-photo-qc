@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, type CSSProperties } from "react";
 import {
   AlertTriangle,
   Check,
@@ -9,6 +9,8 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { api, label, send, thumbnail, useStored, vehicleName } from "./api";
+import { ShotSelect } from "./ShotSelect";
+import { VehicleEditor } from "./VehicleEditor";
 import { Badge, ErrorBox, Field, Modal, Score } from "./ui";
 import type {
   Config,
@@ -29,6 +31,7 @@ export function Detail({
   close,
   notify,
   changed,
+  openOriginal,
 }: {
   id: string;
   initialPhoto?: string;
@@ -40,7 +43,15 @@ export function Detail({
   close: () => void;
   notify: Notify;
   changed: () => void;
+  openOriginal: (photo?: string) => void;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [problemOnly, setProblemOnly] = useState(false);
+  const allTraining = useRef<HTMLInputElement>(null);
+  const [membershipPending, setMembershipPending] = useState<{
+    enabled: boolean;
+    ids?: string[];
+  } | null>(null);
   const [data, setData] = useState<ShootDetail | null>(null);
   const [selected, setSelected] = useState(initialPhoto || "");
   const [reviewId, setReviewId] = useState(initialReview || "");
@@ -59,13 +70,14 @@ export function Detail({
     const abort = new AbortController();
     api<ShootDetail>(`/shoots/${id}`, { signal: abort.signal })
       .then((d) => {
-        if (scope === "training") {
-          d.photos = d.photos.filter((p) => p.training);
-          d.photo_count = d.photos.length;
-        }
         setData(d);
         setSelected((s) =>
-          d.photos.some((p) => p.id === s) ? s : d.photos[0]?.id || "",
+          d.photos.some(
+            (p) => p.id === s && (scope !== "training" || p.training),
+          )
+            ? s
+            : d.photos.find((p) => scope !== "training" || p.training)?.id ||
+              "",
         );
         setError("");
       })
@@ -79,8 +91,46 @@ export function Detail({
     const timer = setTimeout(() => setRefresh((v) => v + 1), 1500);
     return () => clearTimeout(timer);
   }, [data]);
-  const photo = data?.photos.find((p) => p.id === selected);
-  const index = data?.photos.findIndex((p) => p.id === selected) ?? 0;
+  const scopedPhotos =
+    data?.photos.filter((p) => scope !== "training" || p.training) || [];
+  const needsReview = (photoId: string) =>
+    !!data?.reviews.some(
+      (r) => !r.resolved_at && (!r.photo_id || r.photo_id === photoId),
+    );
+  const photos = scopedPhotos.filter((p) => !problemOnly || needsReview(p.id));
+  const photo = photos.find((p) => p.id === selected) || photos[0];
+  const index = photo ? photos.findIndex((p) => p.id === photo.id) : -1;
+  const included = (p: Photo) =>
+    membershipPending &&
+    (!membershipPending.ids || membershipPending.ids.includes(p.id))
+      ? membershipPending.enabled
+      : !!p.training;
+  const trainingCount = data?.photos.filter(included).length || 0;
+  const allIncluded =
+    !!data?.photos.length && trainingCount === data.photos.length;
+  useEffect(() => {
+    if (allTraining.current)
+      allTraining.current.indeterminate = trainingCount > 0 && !allIncluded;
+  }, [trainingCount, allIncluded]);
+  useEffect(() => {
+    const selectedButton = document.querySelector<HTMLElement>(
+      ".photo-filmstrip button.selected",
+    );
+    const strip = selectedButton?.parentElement;
+    if (selectedButton && strip) {
+      const child = selectedButton.getBoundingClientRect(),
+        parent = strip.getBoundingClientRect();
+      if (child.left < parent.left || child.right > parent.right)
+        strip.scrollLeft += child.left - parent.left;
+    }
+  }, [photo?.id]);
+  const move = (delta: number) => {
+    const next = photos[index + delta];
+    if (next) {
+      setSelected(next.id);
+      setReviewId("");
+    }
+  };
   const pending = !!data && ["queued", "processing"].includes(data.status);
   async function action(path: string, method: string, body?: unknown) {
     setBusy(true);
@@ -93,8 +143,26 @@ export function Detail({
       setBusy(false);
     }
   }
+  async function setMembership(enabled: boolean, ids?: string[]) {
+    setBusy(true);
+    setMembershipPending({ enabled, ids });
+    try {
+      await send(`/shoots/${id}/training-membership`, "PUT", {
+        enabled,
+        photo_ids: ids,
+      });
+      const updated = await api<ShootDetail>(`/shoots/${id}`);
+      setData(updated);
+      changed();
+    } catch (e) {
+      notify((e as Error).message, true);
+    } finally {
+      setMembershipPending(null);
+      setBusy(false);
+    }
+  }
   const photoReviews =
-    data?.reviews.filter((r) => r.photo_id === selected || !r.photo_id) || [];
+    data?.reviews.filter((r) => r.photo_id === photo?.id || !r.photo_id) || [];
   const review =
     data?.reviews.find((r) => r.id === reviewId) ||
     photoReviews.find((r) => !r.resolved_at) ||
@@ -109,6 +177,18 @@ export function Detail({
       onClose={close}
       wide
     >
+      {editing && data && (
+        <VehicleEditor
+          shoot={data}
+          config={config}
+          notify={notify}
+          close={() => setEditing(false)}
+          saved={() => {
+            setEditing(false);
+            reload();
+          }}
+        />
+      )}
       {pasteOpen && data && clipboard && (
         <Modal title="Paste settings" onClose={() => setPasteOpen(false)}>
           <p>
@@ -119,7 +199,7 @@ export function Detail({
           <div className="button-row">
             <button
               className="button secondary"
-              onClick={() => setTargets(data.photos.map((p) => p.id))}
+              onClick={() => setTargets(scopedPhotos.map((p) => p.id))}
             >
               Select all
             </button>
@@ -128,7 +208,7 @@ export function Detail({
             </button>
           </div>
           <div className="paste-grid">
-            {data.photos.map((p) => (
+            {scopedPhotos.map((p) => (
               <label key={p.id} className="paste-photo">
                 <input
                   type="checkbox"
@@ -156,7 +236,7 @@ export function Detail({
               try {
                 await send("/training/paste", "POST", {
                   labels: clipboard,
-                  targets: data.photos
+                  targets: scopedPhotos
                     .filter((p) => targets.includes(p.id))
                     .map((p) => ({
                       photo_id: p.id,
@@ -246,7 +326,7 @@ export function Detail({
               </div>
               <p>
                 {data.shoot_date} · {data.photographer_name} ·{" "}
-                {data.photo_count} photos
+                {scopedPhotos.length} photos
               </p>
               {data.note && <p className="shoot-note">{data.note}</p>}
             </div>
@@ -273,6 +353,31 @@ export function Detail({
             </span>
           </div>
           <div className="detail-actions">
+            <button
+              className="button secondary"
+              disabled={busy || pending}
+              onClick={() => setEditing(true)}
+            >
+              Edit vehicle
+            </button>
+            {scope === "training" && (
+              <button
+                className="button secondary"
+                onClick={() => openOriginal(photo?.id)}
+              >
+                View full vehicle in Photo Library →
+              </button>
+            )}
+            <label className="checkbox">
+              <input
+                ref={allTraining}
+                type="checkbox"
+                checked={allIncluded}
+                disabled={busy || !data.photos.length}
+                onChange={(e) => setMembership(e.target.checked)}
+              />
+              Use all photos for training
+            </label>
             <button
               className="button secondary"
               disabled={pending || busy || !clipboard || !data.photos.length}
@@ -309,10 +414,41 @@ export function Detail({
               Banner guide
             </label>
           </div>
+          <div className="batch-tools">
+            <label className="checkbox">
+              <input
+                type="checkbox"
+                checked={problemOnly}
+                onChange={(e) => {
+                  setProblemOnly(e.target.checked);
+                  setReviewId("");
+                }}
+              />
+              Show only photos needing review (
+              {scopedPhotos.filter((p) => needsReview(p.id)).length})
+            </label>
+            <span className="form-note">
+              {trainingCount} of {data.photos.length} photos in training
+            </span>
+          </div>
+          {!photos.length && (
+            <p className="panel">
+              {problemOnly
+                ? "No photos need review in this view. Clear the filter to see all photos."
+                : "No training photos selected. Use the checkbox above or open the full vehicle."}
+            </p>
+          )}
           {photo && (
             <div className="detail-grid">
               <div className="photo-column">
-                <div className="photo-stage">
+                <div
+                  className="photo-stage"
+                  style={
+                    {
+                      "--photo-ratio": photo.width / photo.height,
+                    } as CSSProperties
+                  }
+                >
                   <img
                     src={`/api/photos/${photo.id}/original`}
                     alt={`Photo ${photo.position}: ${photo.original_filename}`}
@@ -331,8 +467,24 @@ export function Detail({
                       />
                     </div>
                   )}
+                  <button
+                    className="stage-nav previous"
+                    aria-label="Previous photo on image"
+                    disabled={index <= 0}
+                    onClick={() => move(-1)}
+                  >
+                    <ChevronLeft />
+                  </button>
+                  <button
+                    className="stage-nav next"
+                    aria-label="Next photo on image"
+                    disabled={index >= photos.length - 1}
+                    onClick={() => move(1)}
+                  >
+                    <ChevronRight />
+                  </button>
                   <span className="photo-position">
-                    {index + 1} / {data.photos.length}
+                    Photo {photo.position} · {index + 1} / {photos.length}
                   </span>
                 </div>
                 {banner && (
@@ -352,19 +504,25 @@ export function Detail({
                     aria-label="Previous photo"
                     disabled={index === 0}
                     onClick={() => {
-                      setSelected(data.photos[index - 1].id);
-                      setReviewId("");
+                      move(-1);
                     }}
                   >
                     <ChevronLeft />
                   </button>
                   <span title={photo.original_filename}>
-                    {photo.original_filename}
+                    {photo.display_filename}
                     <small>
                       {photo.width} × {photo.height} ·{" "}
                       {(photo.byte_size / 1024 / 1024).toFixed(1)} MB
                     </small>
                   </span>
+                  <a
+                    className="text-button"
+                    href={`/api/photos/${photo.id}/original?download=true`}
+                    download
+                  >
+                    Download
+                  </a>
                   <a
                     className="icon-button"
                     href={`/api/photos/${photo.id}/original`}
@@ -377,30 +535,38 @@ export function Detail({
                   <button
                     className="icon-button"
                     aria-label="Next photo"
-                    disabled={index === data.photos.length - 1}
+                    disabled={index >= photos.length - 1}
                     onClick={() => {
-                      setSelected(data.photos[index + 1].id);
-                      setReviewId("");
+                      move(1);
                     }}
                   >
                     <ChevronRight />
                   </button>
                 </div>
-                <div className="photo-filmstrip">
-                  {data.photos.map((p) => (
+                <div
+                  className="photo-filmstrip"
+                  aria-label="Photo carousel with technical scores"
+                >
+                  {photos.map((p) => (
                     <button
                       key={p.id}
                       aria-label={`View photo ${p.position}`}
-                      aria-pressed={p.id === selected}
-                      className={p.id === selected ? "selected" : ""}
+                      aria-pressed={p.id === photo.id}
+                      className={`${p.id === photo.id ? "selected" : ""} ${needsReview(p.id) ? "needs-review" : ""}`}
                       onClick={() => {
                         setSelected(p.id);
                         setReviewId("");
                       }}
                     >
+                      <b className="film-score">
+                        Tech{" "}
+                        {p.analysis?.score == null
+                          ? "—"
+                          : Math.round(p.analysis.score)}
+                      </b>
                       <img src={thumbnail(p.id)} alt={`Photo ${p.position}`} />
                       <span>{p.position}</span>
-                      {data.issues.some((i) => i.photo_id === p.id) && <i />}
+                      {needsReview(p.id) && <i title="Needs review" />}
                     </button>
                   ))}
                 </div>
@@ -408,6 +574,7 @@ export function Detail({
                   <summary>Photo & vehicle details</summary>
                   <dl>
                     {Object.entries({
+                      "Original filename": photo.original_filename,
                       Color: data.color || "Not entered",
                       Season: data.season,
                       Lighting: data.lighting,
@@ -428,23 +595,17 @@ export function Detail({
                   <h3>Photo {photo.position}</h3>
                   <Score value={photo.analysis?.score ?? null} small />
                 </div>
-                <Field title="Shot type (human label)">
-                  <select
-                    value={photo.shot_type}
-                    disabled={busy || pending}
-                    onChange={(e) =>
-                      action(`/photos/${photo.id}/shot`, "PUT", {
-                        shot_type: e.target.value,
-                      })
-                    }
-                  >
-                    {config.shot_types.map((s) => (
-                      <option key={s} value={s}>
-                        {label(s)}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
+                <ShotSelect
+                  title="Shot type (human label)"
+                  value={photo.shot_type}
+                  options={config.shot_types}
+                  disabled={busy || pending}
+                  onChange={(value) =>
+                    action(`/photos/${photo.id}/shot`, "PUT", {
+                      shot_type: value,
+                    })
+                  }
+                />
                 {photo.analysis?.predicted_shot && (
                   <p className="form-note">
                     Model suggestion: {label(photo.analysis.predicted_shot)} ·{" "}
@@ -459,15 +620,54 @@ export function Detail({
                 >
                   Delete photo…
                 </button>
+                <label className="checkbox">
+                  <input
+                    type="checkbox"
+                    checked={included(photo)}
+                    disabled={busy}
+                    onChange={(e) =>
+                      setMembership(e.target.checked, [photo.id])
+                    }
+                  />
+                  Add to Training Library
+                </label>
+                {photo.training?.eligible && (
+                  <p className="training-approved">
+                    ✓ Approved for training. Detected concerns are retained
+                    below; review status is separate.
+                  </p>
+                )}
                 <h4>Detected concerns</h4>
                 {data.issues
                   .filter((i) => i.photo_id === photo.id || !i.photo_id)
                   .map((i) => (
-                    <div className={`issue ${i.severity}`} key={i.id}>
+                    <div
+                      className={`issue ${i.severity} ${photo.training?.eligible || (data.reviews.some((r) => r.resolved_at && r.run_id === data.current_run_id && (r.photo_id === photo.id || !r.photo_id)) && !needsReview(photo.id)) ? "resolved" : ""}`}
+                      key={i.id}
+                    >
                       <Badge tone={i.severity === "severe" ? "danger" : "warn"}>
                         {label(i.kind)}
                       </Badge>
                       <p>{i.description}</p>
+                      {!needsReview(photo.id) &&
+                        data.reviews.some(
+                          (r) =>
+                            r.run_id === data.current_run_id &&
+                            r.resolved_at &&
+                            (r.photo_id === photo.id || !r.photo_id),
+                        ) && (
+                          <small>
+                            Review resolved ·{" "}
+                            {label(
+                              data.reviews.find(
+                                (r) =>
+                                  r.run_id === data.current_run_id &&
+                                  r.resolved_at &&
+                                  (r.photo_id === photo.id || !r.photo_id),
+                              )?.resolution || "reviewed",
+                            )}
+                          </small>
+                        )}
                     </div>
                   ))}
                 {!data.issues.some(
@@ -507,24 +707,14 @@ export function Detail({
                     saved={reload}
                     onCopy={onCopy}
                     next={() => {
-                      if (index < data.photos.length - 1) {
-                        setSelected(data.photos[index + 1].id);
+                      if (index < photos.length - 1) {
+                        setSelected(photos[index + 1].id);
                         setReviewId("");
                       }
                     }}
-                    hasNext={index < data.photos.length - 1}
+                    hasNext={index < photos.length - 1}
                   />
-                ) : (
-                  <button
-                    className="button secondary full"
-                    disabled={busy}
-                    onClick={() =>
-                      action(`/photos/${photo.id}/training`, "POST")
-                    }
-                  >
-                    <FlaskConical size={16} /> Add to Training Library
-                  </button>
-                )}
+                ) : null}
               </aside>
             </div>
           )}
@@ -646,18 +836,12 @@ function TrainingEditor({
       <button className="button secondary" onClick={() => onCopy(labels)}>
         Copy Settings
       </button>
-      <Field title="Training shot type">
-        <select
-          value={labels.shot_type || "unknown"}
-          onChange={(e) => setLabels({ ...labels, shot_type: e.target.value })}
-        >
-          {config.shot_types.map((v) => (
-            <option key={v} value={v}>
-              {label(v)}
-            </option>
-          ))}
-        </select>
-      </Field>
+      <ShotSelect
+        title="Training shot type"
+        value={labels.shot_type || "unknown"}
+        options={config.shot_types}
+        onChange={(value) => setLabels({ ...labels, shot_type: value })}
+      />
       <div className="label-grid">
         {[
           "angle",

@@ -244,6 +244,7 @@ def test_v1_migration_preserves_rows_labels_files_and_models(tmp_path):
     database = tmp_path / "qc.db"
     with sqlite3.connect(database) as conn:
         for table, column in [
+            ("vehicle_shoots", "metadata_revision"),
             ("vehicle_shoots", "deleted_at"),
             ("vehicle_shoots", "training_deleted_at"),
             ("photos", "deleted_at"),
@@ -274,7 +275,7 @@ def test_v1_migration_preserves_rows_labels_files_and_models(tmp_path):
         assert got["training"]["labels"]["exposure"] == "unknown"
         assert got["training"]["labels"]["shot_type"] == "interior"
     with sqlite3.connect(database) as conn:
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 2
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == 3
         for table, (columns, rows) in before.items():
             assert conn.execute(f"SELECT {','.join(columns)} FROM {table} ORDER BY rowid").fetchall() == rows
     assert (tmp_path / "migration-backups/before-v2.db").is_file()

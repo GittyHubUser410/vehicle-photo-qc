@@ -151,3 +151,7 @@ tests/              Backend workflow and dataset-validation tests
 docs/               Architecture, Windows, training, and implementation notes
 data/               Generated local data (ignored by Git)
 ```
+
+## Phone and library workflow update
+
+See [the update guide](docs/PHONE-LIBRARY-UPDATE.md) for portrait viewing, searchable shot labels, library editing, training selection, collection guidance, and Windows upgrade steps that preserve your Cloudflare settings and existing data.

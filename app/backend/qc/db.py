@@ -92,6 +92,7 @@ class Shoot(Identity, Base):
     checks: Mapped[dict] = mapped_column(JSON, default=dict)
     deleted_at: Mapped[str | None] = mapped_column(String)
     training_deleted_at: Mapped[str | None] = mapped_column(String)
+    metadata_revision: Mapped[int] = mapped_column(Integer, default=0)
 
 
 class Photo(Identity, Base):
@@ -183,6 +184,7 @@ class ShotType(Base):
     key: Mapped[str] = mapped_column(String(80), primary_key=True)
     label: Mapped[str] = mapped_column(String(150), unique=True)
     position: Mapped[int] = mapped_column(Integer)
+    archived: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 class DealerSequence(Base):
@@ -275,7 +277,7 @@ def initialize(data_dir: str | Path | None = None):
     migrate(engine, data)
     Base.metadata.create_all(engine)
     with engine.begin() as conn:
-        conn.exec_driver_sql("PRAGMA user_version=2")
+        conn.exec_driver_sql("PRAGMA user_version=3")
     factory = sessionmaker(engine, class_=ActiveSession, expire_on_commit=False)
     from .catalog import SHOT_CATALOG
 

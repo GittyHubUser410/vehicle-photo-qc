@@ -154,3 +154,21 @@ class PasteInput(Strict):
 
 class TrashInput(Strict):
     scope: Literal["all", "training"] = "all"
+
+
+class VehicleEditInput(ImportInput):
+    metadata_revision: int = Field(ge=0)
+
+
+class TrainingMembershipInput(Strict):
+    enabled: bool
+    photo_ids: list[str] | None = Field(None, min_length=1, max_length=200)
+
+
+class ShotOrderInput(Strict):
+    keys: list[str] = Field(min_length=1, max_length=1000)
+
+
+class ShotEditInput(Strict):
+    name: str | None = Field(None, min_length=1, max_length=150)
+    archived: bool | None = None

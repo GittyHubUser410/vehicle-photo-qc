@@ -151,8 +151,15 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
                 "photographers": [
                     serialize(x) for x in session.scalars(select(Photographer).order_by(Photographer.name))
                 ],
-                "shot_types": list(session.scalars(select(ShotType.key).order_by(ShotType.position))),
+                "shot_types": list(
+                    session.scalars(
+                        select(ShotType.key).where(ShotType.archived.is_(False)).order_by(ShotType.position)
+                    )
+                ),
                 "shot_type_labels": {x.key: x.label for x in session.scalars(select(ShotType))},
+                "shot_catalog": [
+                    serialize(x) for x in session.scalars(select(ShotType).order_by(ShotType.position))
+                ],
                 "default_rules": DEFAULT_RULES,
             }
 
@@ -353,6 +360,13 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
             "previously_queued": previous,
             "issue_count": issues,
             "previews": [{"id": p.id, "position": p.position} for p in photos[:3]],
+            "concerns": list(
+                session.scalars(
+                    select(Review.reason)
+                    .where(Review.shoot_id == shoot.id, Review.resolved_at.is_(None))
+                    .limit(3)
+                )
+            ),
         }
 
     @app.get("/api/shoots")
@@ -464,6 +478,7 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
                 photos.append(
                     serialize(photo)
                     | {
+                        "display_filename": display_filename(session, shoot, photo),
                         "analysis": measurements.get(photo.id),
                         "training": serialize(training)
                         if training and not shoot.training_deleted_at
@@ -520,8 +535,12 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
             session.commit()
             return {"status": "queued"}
 
+    from .library_routes import display_filename, register_library_routes
+
+    register_library_routes(app, factory, policy_for, required)
+
     @app.get("/api/photos/{photo_id}/{variant}")
-    def photo_file(photo_id: str, variant: str):
+    def photo_file(photo_id: str, variant: str, download: bool = False):
         if variant not in ("thumbnail", "original"):
             raise HTTPException(404)
         with factory() as session:
@@ -532,7 +551,12 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
                 )
             except FileNotFoundError:
                 raise HTTPException(404, "Image file is missing. Restore it from your backup.")
-            return FileResponse(path, headers={"Cache-Control": "private, max-age=86400"})
+            shoot = required(session, Shoot, photo.shoot_id)
+            return FileResponse(
+                path,
+                filename=display_filename(session, shoot, photo) if download else None,
+                headers={"Cache-Control": "private, max-age=86400"},
+            )
 
     @app.put("/api/photos/{photo_id}/shot")
     def set_shot(photo_id: str, body: ShotInput):

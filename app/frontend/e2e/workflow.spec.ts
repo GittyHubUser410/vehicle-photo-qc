@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import { deflateSync } from "node:zlib";
 
 function crc32(buf: Buffer) {
@@ -65,13 +65,11 @@ test("import, reorder, inspect, resolve, and approve training labels", async ({
   await expect(
     dialog.getByRole("button", { name: "Reanalyze shoot", exact: true }),
   ).toBeEnabled({ timeout: 20000 });
-  await expect(dialog.locator(".photo-navigation")).toContainText("rear.png");
-  await dialog
-    .getByRole("button", { name: "Add to Training Library", exact: true })
-    .click();
-  await dialog
-    .getByRole("combobox", { name: "Training shot type", exact: true })
-    .selectOption("rear");
+  await expect(dialog.locator(".photo-navigation")).toContainText(
+    "Ford_Explorer",
+  );
+  await dialog.getByLabel("Add to Training Library", { exact: true }).check();
+  await chooseShot(page, "Training shot type", "Rear");
   await dialog.getByLabel("Approved for training", { exact: true }).check();
   await dialog
     .getByRole("button", { name: "Save labels", exact: true })
@@ -209,10 +207,10 @@ test("training defaults, pending removal, bulk paste, shot sync, and trash resto
   await upload.getByRole("button", { name: /Remove selected/ }).click();
   await expect(
     upload.getByLabel("Shot type for pending photo 1", { exact: true }),
-  ).toHaveValue("front_passenger_34");
+  ).toContainText("Front passenger ¾");
   await expect(
     upload.getByLabel("Shot type for pending photo 2", { exact: true }),
-  ).toHaveValue("front");
+  ).toContainText("Front");
   await upload
     .getByRole("button", { name: "Import 3 training photos" })
     .click();
@@ -224,8 +222,8 @@ test("training defaults, pending removal, bulk paste, shot sync, and trash resto
     detail.getByRole("combobox", { name: "Exposure", exact: true }),
   ).toHaveValue("good");
   await expect(
-    detail.getByRole("combobox", { name: "Training shot type", exact: true }),
-  ).toHaveValue("front_passenger_34");
+    detail.getByRole("button", { name: "Training shot type", exact: true }),
+  ).toContainText("Front passenger ¾");
   await detail
     .getByRole("combobox", { name: "Exposure", exact: true })
     .selectOption("bad");
@@ -254,23 +252,19 @@ test("training defaults, pending removal, bulk paste, shot sync, and trash resto
     detail.getByRole("combobox", { name: "Exposure", exact: true }),
   ).toHaveValue("bad");
   await expect(
-    detail.getByRole("combobox", { name: "Training shot type", exact: true }),
-  ).toHaveValue("front");
-  await detail
-    .getByRole("combobox", { name: "Training shot type", exact: true })
-    .selectOption("engine");
+    detail.getByRole("button", { name: "Training shot type", exact: true }),
+  ).toContainText("Front");
+  await chooseShot(page, "Training shot type", "Engine");
   await detail
     .getByRole("button", { name: "Save labels", exact: true })
     .click();
   await expect(page.getByRole("status")).toContainText(
     "Training labels saved.",
   );
-  await detail
-    .getByRole("combobox", { name: "Shot type (human label)", exact: true })
-    .selectOption("rear");
+  await chooseShot(page, "Shot type (human label)", "Rear");
   await expect(
-    detail.getByRole("combobox", { name: "Training shot type", exact: true }),
-  ).toHaveValue("rear");
+    detail.getByRole("button", { name: "Training shot type", exact: true }),
+  ).toContainText("Rear");
   await page.screenshot({
     path: "test-results/training-revisions.png",
     fullPage: true,
@@ -351,13 +345,11 @@ test("Android-sized capture and interrupted staged uploads keep one vehicle", as
     mimeType: "image/png",
     buffer: png(),
   });
-  await page
-    .getByLabel("Select photos", { exact: true })
-    .setInputFiles({
-      name: "gallery.png",
-      mimeType: "image/png",
-      buffer: png(),
-    });
+  await page.getByLabel("Select photos", { exact: true }).setInputFiles({
+    name: "gallery.png",
+    mimeType: "image/png",
+    buffer: png(),
+  });
   const submit = page.getByRole("button", {
     name: "Evaluate 2 photos",
     exact: true,
@@ -386,6 +378,319 @@ test("Android-sized capture and interrupted staged uploads keep one vehicle", as
   ).toBe(false);
   await page.screenshot({
     path: "test-results/android-capture-retry.png",
+    fullPage: true,
+  });
+});
+
+async function chooseShot(page: Page, title: string, value: string) {
+  await page.getByRole("button", { name: title, exact: true }).click();
+  const picker = page.getByRole("dialog", {
+    name: `Choose ${title.toLowerCase()}`,
+    exact: true,
+  });
+  await picker.getByRole("textbox", { name: "Search shot types" }).fill(value);
+  await picker.getByRole("button", { name: value, exact: true }).click();
+  await expect(picker).not.toBeVisible();
+}
+
+test("portrait viewer, scores, training membership, vehicle editing and full-shoot link", async ({
+  page,
+  request,
+}) => {
+  const config = await (await request.get("/api/config")).json();
+  const created = await request.post("/api/shoots", {
+    multipart: {
+      metadata: JSON.stringify({
+        mode: "general",
+        stock_number: "MOBILE-REVIEW",
+        year: 2023,
+        make: "Ford",
+        model: "Escape",
+        shoot_date: "2026-10-04",
+        shot_types: ["front", "rear"],
+      }),
+      files: { name: "camera-hash.png", mimeType: "image/png", buffer: png() },
+    },
+  });
+  // Import a two-photo batch using browser FormData (the request helper accepts one field per name).
+  await page.goto("/");
+  const sid = await page.evaluate(async (encoded) => {
+    const bytes = Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0));
+    const data = new FormData();
+    data.set(
+      "metadata",
+      JSON.stringify({
+        mode: "general",
+        stock_number: "MOBILE-REVIEW",
+        year: 2023,
+        make: "Ford",
+        model: "Escape",
+        shoot_date: "2026-10-04",
+        shot_types: ["front", "rear"],
+      }),
+    );
+    data.append(
+      "files",
+      new File([bytes], "camera-hash-1.png", { type: "image/png" }),
+    );
+    data.append(
+      "files",
+      new File([bytes], "camera-hash-2.png", { type: "image/png" }),
+    );
+    const response = await fetch("/api/shoots", { method: "POST", body: data });
+    return (await response.json()).id;
+  }, png().toString("base64"));
+  expect(created.status()).toBe(422); // malformed count is still rejected atomically
+  await expect
+    .poll(
+      async () =>
+        (await (await request.get(`/api/shoots/${sid}`)).json()).status,
+    )
+    .toBe("complete");
+  await page
+    .getByRole("navigation", { name: "Main navigation" })
+    .getByRole("button", { name: "Photo Library", exact: true })
+    .click();
+  const card = page
+    .locator(".library-card")
+    .filter({ hasText: "MOBILE-REVIEW" });
+  await expect(card).toBeVisible();
+  expect(
+    await card.locator("img").evaluate((el) => getComputedStyle(el).objectFit),
+  ).toBe("contain");
+  await expect(card.locator(".library-overlay")).toContainText("Technical");
+  await card.hover();
+  await expect(card.locator(".library-hover")).toBeVisible();
+  await card.click();
+  let dialog = page.getByRole("dialog").first();
+  await expect(dialog.locator(".film-score")).toHaveCount(2);
+  await expect(dialog.locator(".needs-review")).toHaveCount(2);
+  for (const viewport of [
+    { width: 360, height: 800 },
+    { width: 412, height: 915 },
+    { width: 915, height: 412 },
+  ]) {
+    await page.setViewportSize(viewport);
+    const dimensions = await dialog.evaluate((el) => {
+      const body = el.querySelector(".modal-body")!,
+        image = el.querySelector(".photo-stage img")!;
+      return {
+        width: el.getBoundingClientRect().width,
+        scroll: body.scrollWidth,
+        client: body.clientWidth,
+        image: image.getBoundingClientRect().width,
+        height: image.getBoundingClientRect().height,
+      };
+    });
+    expect(dimensions.width).toBeLessThanOrEqual(viewport.width);
+    expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.client + 1);
+    expect(dimensions.image).toBeLessThanOrEqual(dimensions.client);
+    expect(dimensions.height).toBeLessThanOrEqual(viewport.height * 0.66);
+  }
+  await page.setViewportSize({ width: 412, height: 915 });
+  await dialog
+    .getByRole("button", { name: "Next photo on image", exact: true })
+    .click();
+  await expect(
+    dialog.getByRole("heading", { name: "Photo 2", exact: true }),
+  ).toBeVisible();
+  await dialog
+    .getByRole("button", { name: "Previous photo on image", exact: true })
+    .click();
+  await dialog
+    .getByLabel("Use all photos for training", { exact: true })
+    .check();
+  await expect(
+    dialog.getByLabel("Add to Training Library", { exact: true }),
+  ).toBeChecked();
+  await dialog.getByLabel("Add to Training Library", { exact: true }).uncheck();
+  await expect(
+    dialog.getByLabel("Use all photos for training", { exact: true }),
+  ).toHaveJSProperty("indeterminate", true);
+  await dialog
+    .getByRole("button", { name: "Next photo on image", exact: true })
+    .click();
+  await expect(
+    dialog.getByLabel("Add to Training Library", { exact: true }),
+  ).toBeChecked();
+  await chooseShot(page, "Shot type (human label)", "Rear seats");
+  await expect(
+    dialog.getByRole("button", {
+      name: "Shot type (human label)",
+      exact: true,
+    }),
+  ).toContainText("Rear seats");
+  await expect(
+    page.getByRole("textbox", { name: "Search shot types" }),
+  ).toHaveCount(0);
+  await dialog
+    .getByRole("button", { name: "Edit vehicle", exact: true })
+    .click();
+  const editor = page.getByRole("dialog", {
+    name: "Edit vehicle",
+    exact: true,
+  });
+  await editor.getByLabel("Year", { exact: true }).fill("2024");
+  await editor
+    .getByLabel("Stock number", { exact: true })
+    .fill("MOBILE-EDITED");
+  await editor
+    .getByRole("button", { name: "Save vehicle", exact: true })
+    .click();
+  await expect(editor).not.toBeVisible();
+  await expect(dialog.locator(".photo-navigation")).toContainText(
+    "2024_Ford_Escape",
+  );
+  await dialog
+    .getByRole("button", { name: "Close details", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Open navigation", exact: true })
+    .click();
+  await page
+    .getByRole("navigation", { name: "Main navigation" })
+    .getByRole("button", { name: "Training Library", exact: true })
+    .click();
+  await page
+    .locator(".vehicle-card:visible")
+    .filter({ hasText: "MOBILE-EDITED" })
+    .click();
+  dialog = page.getByRole("dialog").first();
+  await expect(dialog.locator(".photo-filmstrip button")).toHaveCount(1);
+  await page.screenshot({
+    path: "test-results/portrait-library-detail.png",
+    fullPage: true,
+  });
+  await dialog
+    .getByRole("button", {
+      name: "View full vehicle in Photo Library →",
+      exact: true,
+    })
+    .click();
+  dialog = page.getByRole("dialog").first();
+  await expect(dialog.locator(".photo-filmstrip button")).toHaveCount(2);
+  // Resolve one photo and verify problem-only browsing omits it.
+  const detail = await (await request.get(`/api/shoots/${sid}`)).json();
+  const review = detail.reviews.find(
+    (r: { photo_id: string }) => r.photo_id === detail.photos[0].id,
+  );
+  await request.patch(`/api/reviews/${review.id}`, {
+    data: { action: "resolve", resolution: "accepted" },
+  });
+  await dialog
+    .getByRole("button", { name: "Close details", exact: true })
+    .click();
+  await page
+    .locator(".library-card")
+    .filter({ hasText: "MOBILE-EDITED" })
+    .click();
+  await dialog.getByLabel(/Show only photos needing review/).check();
+  await expect(dialog.locator(".photo-filmstrip button")).toHaveCount(1);
+  await expect(
+    dialog.getByRole("heading", { name: "Photo 2", exact: true }),
+  ).toBeVisible();
+  expect(config.shot_types.length).toBeGreaterThan(40);
+});
+
+test("shot catalog rename reorder delete restore and library menu editing", async ({
+  page,
+  request,
+}) => {
+  const imported = await request.post("/api/shoots", {
+    multipart: {
+      metadata: JSON.stringify({
+        mode: "general",
+        stock_number: "MENU-TEST",
+        shoot_date: "2026-10-04",
+      }),
+      files: { name: "menu.png", mimeType: "image/png", buffer: png() },
+    },
+  });
+  const importedId = (await imported.json()).id;
+  await expect
+    .poll(
+      async () =>
+        (await (await request.get(`/api/shoots/${importedId}`)).json()).status,
+    )
+    .toBe("complete");
+  await page.goto("/");
+  await page
+    .getByRole("navigation", { name: "Main navigation" })
+    .getByRole("button", { name: "Dealership Setup", exact: true })
+    .click();
+  await page
+    .getByLabel("New shot type", { exact: true })
+    .fill("Prototype detail");
+  await page
+    .getByRole("button", { name: "Add shot type", exact: true })
+    .click();
+  await page.getByText(/Manage categories/).click();
+  const row = page
+    .locator(".shot-manager-row")
+    .filter({ hasText: "Prototype detail" });
+  await expect(row).toBeVisible();
+  await row.getByRole("button", { name: "Rename", exact: true }).click();
+  await page
+    .getByLabel("Shot type name", { exact: true })
+    .fill("Prototype badge");
+  await page.getByRole("button", { name: "Save name", exact: true }).click();
+  const renamed = page
+    .locator(".shot-manager-row")
+    .filter({ hasText: "Prototype badge" });
+  await renamed
+    .getByRole("button", { name: "Move Prototype badge up", exact: true })
+    .click();
+  await expect
+    .poll(async () =>
+      (await (await request.get("/api/config")).json()).shot_types.at(-2),
+    )
+    .toBe("prototype_detail");
+  await renamed.getByRole("button", { name: "Delete", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Delete category", exact: true })
+    .click();
+  await expect
+    .poll(async () =>
+      (await (await request.get("/api/config")).json()).shot_types.includes(
+        "prototype_detail",
+      ),
+    )
+    .toBe(false);
+  await page.getByText("Deleted categories", { exact: true }).click();
+  await page
+    .locator(".shot-manager-row")
+    .filter({ hasText: "Prototype badge" })
+    .getByRole("button", { name: "Restore", exact: true })
+    .click();
+  await expect
+    .poll(async () =>
+      (await (await request.get("/api/config")).json()).shot_types.includes(
+        "prototype_detail",
+      ),
+    )
+    .toBe(true);
+  await page
+    .getByRole("navigation", { name: "Main navigation" })
+    .getByRole("button", { name: "Photo Library", exact: true })
+    .click();
+  const options = page
+    .locator(".library-card-wrap")
+    .filter({ hasText: "MENU-TEST" });
+  await options.locator("summary").click();
+  await options
+    .getByRole("button", { name: "Edit vehicle", exact: true })
+    .click();
+  const editor = page.getByRole("dialog", {
+    name: "Edit vehicle",
+    exact: true,
+  });
+  await editor.getByLabel("Color", { exact: true }).fill("Silver");
+  await editor
+    .getByRole("button", { name: "Save vehicle", exact: true })
+    .click();
+  await expect(editor).not.toBeVisible();
+  await page.screenshot({
+    path: "test-results/desktop-library.png",
     fullPage: true,
   });
 });

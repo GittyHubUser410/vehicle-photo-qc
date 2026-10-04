@@ -40,6 +40,12 @@ export interface Config {
   dealerships: Dealer[];
   photographers: { id: string; name: string }[];
   shot_types: string[];
+  shot_catalog: {
+    key: string;
+    label: string;
+    position: number;
+    archived: boolean;
+  }[];
   shot_type_labels: Record<string, string>;
   default_rules: Rules;
 }
@@ -63,6 +69,7 @@ export interface Photo {
   shoot_id: string;
   position: number;
   original_filename: string;
+  display_filename: string;
   width: number;
   height: number;
   byte_size: number;
@@ -108,6 +115,10 @@ export interface Shoot {
   id: string;
   dealership_id: string | null;
   dealership_name: string;
+  photographer_id: string | null;
+  source: string;
+  metadata_revision: number;
+  concerns: string[];
   photographer_name: string;
   stock_number: string;
   inventory_type: string;
