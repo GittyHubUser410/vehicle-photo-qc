@@ -49,6 +49,7 @@ Implement one milestone at a time. Do not begin the next milestone until the cur
 - [V0.2A-MIGRATION-NOTES.md](V0.2A-MIGRATION-NOTES.md) — preservation, SQLite/PostgreSQL, rollback, and upgrade constraints.
 - [V0.2-HUMAN-TRAINING-MODE.md](V0.2-HUMAN-TRAINING-MODE.md) — approved v0.2C training-mode design.
 - [DEVELOPMENT-HANDOFF-PROCESS.md](DEVELOPMENT-HANDOFF-PROCESS.md) — how Chat, Work, and Codex should divide responsibilities.
+- [AI-ARCHITECTURE-COMPARISON.md](AI-ARCHITECTURE-COMPARISON.md) — specialized local vision ML vs multimodal LLM vs hybrid architecture, retention, explainability, and prototype cost scaling.
 
 ## Codex instruction
 
