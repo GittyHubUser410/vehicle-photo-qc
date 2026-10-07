@@ -6,6 +6,8 @@ Chat → Work → Codex → Work → Chat.
 
 GitHub is the durable source of truth. Conversation messages should point agents to repository artifacts rather than carrying the full project history.
 
+This project is optimized around the user's limited decision/testing time rather than around simulating a traditional human software team. See `docs/HUMAN-BOTTLENECK-WORKFLOW.md`.
+
 ## Roles
 
 ### Chat
@@ -25,6 +27,7 @@ Owns scoped implementation, tests, debugging, refactors, migrations, and the Cod
 - `docs/architecture/C4.md` — current System Context and Container architecture.
 - `docs/architecture/decisions/` — durable Architecture Decision Records.
 - `docs/API-CONTRACT.md` — API stability/contract policy.
+- `docs/HUMAN-BOTTLENECK-WORKFLOW.md` — queueing, WIP limits, decision packets, human-test packets, and AI parallelism rules.
 - Figma/FigJam — used when UI/UX or visual architecture needs approval before implementation.
 - GitHub Issues — implementation-sized work, durable technical tasks, and defects.
 - GitHub Projects — execution/roadmap view when configured; it does not replace ROADMAP.md.
@@ -44,6 +47,12 @@ Use Figma for important UI/UX screens where visual ambiguity could cause impleme
 ## API contract rule
 
 FastAPI's generated OpenAPI schema is the authoritative machine-readable API contract. Work must consider compatibility for client-facing changes, and Codex must update endpoints, schemas, tests, and contract behavior together.
+
+## Human-attention rule
+
+Only send work to the user after AI verification unless the issue genuinely requires a product decision, physical/device test, subjective UX judgment, or business acceptance. When user input is needed, package it as a compact Decision Packet or Human Test Packet. Keep a small Ready-for-AI queue so implementation can continue without repeatedly interrupting the user.
+
+When the Ready-for-Human-Test queue is full, prioritize automation, tests, fixtures, documentation, research, Figma work, migration rehearsal, and future handoff preparation instead of producing more review debt.
 
 ## Escalation
 
