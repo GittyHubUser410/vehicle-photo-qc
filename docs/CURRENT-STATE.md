@@ -24,6 +24,7 @@ Prepare v0.2A production foundation, then v0.2B management intelligence, v0.2C H
 - `docs/architecture/C4.md`
 - `docs/architecture/decisions/`
 - `docs/API-CONTRACT.md`
+- `docs/HUMAN-BOTTLENECK-WORKFLOW.md`
 
 ## Architecture direction
 - React/Vite web client + FastAPI backend.
@@ -38,7 +39,9 @@ Prepare v0.2A production foundation, then v0.2B management intelligence, v0.2C H
 ## Workflow
 Chat → Work → Codex → Work → Chat.
 
-GitHub Issues should track implementation-sized work. A GitHub Project board should be configured for v0.2 execution when practical. Important UI-heavy work should have an approved Figma/FigJam reference before implementation.
+GitHub Issues should track implementation-sized work. The v0.2 GitHub Project is the execution view. Important UI-heavy work should have an approved Figma/FigJam reference before implementation.
+
+Development is optimized around the user's decision/testing capacity. Maintain a small Ready-for-AI queue, limit concurrent independent implementation work, cap the Ready-for-Human-Test queue, and send the user compact Decision Packets / Human Test Packets rather than repeated low-level interruptions.
 
 ## Next approved milestone
 v0.2A — Production foundation.
