@@ -48,3 +48,6 @@ v0.2A — Production foundation.
 
 ## Important preservation requirements
 Do not lose existing photos, labels, model artifacts, datasets, dealership rules, review history, or working Cloudflare pilot configuration during migrations.
+
+## AI Project Control Center
+A separate cross-project Control Center project is approved. Vehicle QC should eventually register with it using standardized project metadata and human-attention task fields, while GitHub remains the engineering source of truth. Control Center implementation is out of scope for the Vehicle QC repository itself.
