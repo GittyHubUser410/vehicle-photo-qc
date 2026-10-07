@@ -1,0 +1,32 @@
+project_id: "vehicle-qc"
+display_name: "Vehicle QC"
+status: "focus"
+priority: "high"
+
+repository:
+  provider: "github"
+  full_name: "GittyHubUser410/vehicle-photo-qc"
+  project_url: "https://github.com/users/GittyHubUser410/projects/1"
+  documentation_ref: "docs/v0.2-planning"
+
+workflow:
+  model: "chat-work-codex-work-chat"
+  current_milestone: "v0.2A"
+  current_stage: "planning"
+
+links:
+  product_chat: ""
+  work_chat: ""
+  figma: ""
+  live_app: "https://app.stagenowqcs.com"
+  roadmap: "docs/V0.2-ROADMAP.md"
+
+human_attention:
+  max_waiting_tasks: 3
+  default_notification_policy: "digest"
+
+management_standard:
+  version: "1.0"
+  model: "human-bottleneck"
+  workflow: "chat-work-codex-work-chat"
+  control_center_compatible: true
