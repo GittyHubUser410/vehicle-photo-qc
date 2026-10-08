@@ -61,3 +61,7 @@ After reading the repo, respond only with:
 - what AI work is active or waiting if known;
 - what currently needs the owner;
 - next product-level action.
+
+
+## Model-strength guidance
+For substantial handoffs/next steps, apply the Management Standard 1.1 Execution Guidance convention (Difficulty + Light/Standard/Strong/Maximum model strength + rationale + escalation trigger + owner-intervention flag). Global management-policy changes must be proposed to the AI Project Control Center Chat rather than changed locally.
