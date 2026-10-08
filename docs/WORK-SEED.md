@@ -29,9 +29,21 @@ Read:
 5. `docs/AI-WORKFLOW.md`
 6. active Chat → Work handoff or v0.2A specification;
 7. relevant ADR/C4/API/Figma files.
+8. `docs/VEHICLE-QC-STRATEGIC-REVIEW-2026-10-07.md` and `docs/VEHICLE-QC-VERSION-TIMELINE-REV2.md`.
 
 ## Current engineering target
-v0.2A Production Foundation, with PostgreSQL transition, safe multiuser behavior, named roles, job isolation/queueing, audit trail, Windows startup/recovery, pilot preservation, Settings shell, and provenance/embedding preparation.
+**v0.2A.1 first:** verified labels, coverage, and QC evidence state.
+
+Work should define and verify the evidence model before the broader production-foundation implementation:
+- suggested / verified / predicted states;
+- actor/model/timestamp/revision provenance where relevant;
+- separation of UI defaults from verified training truth;
+- explicit QC/check coverage and applicability;
+- score/result semantics that do not imply unavailable checks ran;
+- additive migration/preservation for historical data;
+- automated tests preventing default/suggested values from silently becoming verified truth.
+
+After A.1 passes, proceed to **v0.2A.2**: PostgreSQL transition, safe multiuser behavior, named roles, job isolation/queueing, audit trail, Windows startup/recovery, backup restoration, and pilot preservation.
 
 ## Human-attention rule
 Resolve internal engineering decisions yourself when they do not materially change product behavior.
