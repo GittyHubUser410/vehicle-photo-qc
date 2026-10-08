@@ -75,7 +75,8 @@ Architecture/data-model review completed against planning commit
 - Implementation PR: https://github.com/GittyHubUser410/vehicle-photo-qc/pull/10 (open; do not merge/deploy under the Codex handoff).
 - Independent review/correction handoff: `docs/handoffs/work-to-codex/V0.2A.1-CORRECTIONS.md`.
 - Work verification: 60 backend tests, 9 browser tests, lint and production build passed; a targeted fixture reproduced incorrect classifier execution status for low-confidence inference (R1).
-- Next executor: Codex, correct R1 on the existing PR branch; then Work independently rechecks. Do not merge/deploy or begin A.2.
+- R1 correction: implemented on the existing PR branch; classifier execution/outcome now comes from inference independently of human operational resolution. See the updated Codex report for regression evidence.
+- Next executor: Work, independently recheck R1 and relevant regressions. Do not merge/deploy or begin A.2.
 - No new owner decision blocks implementation under the locked Chat handoff.
 - Owner acceptance is not ready yet. Work must clear the correction before the 15–30 minute owner acceptance session.
 

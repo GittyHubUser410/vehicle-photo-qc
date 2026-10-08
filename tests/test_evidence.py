@@ -331,6 +331,89 @@ def test_unverified_schema2_not_bypassed_by_frozen_mode_D05(client, app, state):
         read_manifest(path, app.state.data, respect_trash=False)
 
 
+@pytest.mark.parametrize("verified", [False, True], ids=["suggested", "human-verified"])
+@pytest.mark.parametrize(
+    "scenario, execution, outcome, reason",
+    [
+        ("low", "completed", "unknown", "low_confidence"),
+        ("threshold", "completed", "pass", "resolved"),
+        ("absent", "unavailable", "unknown", "model_unavailable"),
+        ("exception", "error", "unknown", "prediction_error"),
+    ],
+)
+def test_classifier_execution_independent_of_resolution_R1(
+    client, app, monkeypatch, verified, scenario, execution, outcome, reason
+):
+    sid = batch(client, 1, shot_types=["front"])
+    analyze(app, sid)
+    previous = detail(client, sid)
+    photo = previous["photos"][0]
+    if verified:
+        assert shot(client, photo, True).status_code == 200
+    model_id = None
+    if scenario != "absent":
+        (app.state.data / "models/stub.pt").write_bytes(b"stub")
+        with app.state.factory() as session:
+            model = ModelVersion(
+                name="stub", artifact_key="models/stub.pt", classes=["rear"], status="active"
+            )
+            session.add(model)
+            session.commit()
+            model_id = model.id
+    calls = []
+    confidence = 0.79 if scenario == "low" else 0.8
+
+    def predict(*args):
+        calls.append(args)
+        if scenario == "exception":
+            raise RuntimeError("deterministic prediction failure")
+        return "rear", confidence
+
+    monkeypatch.setattr(classifier, "predict", predict)
+    assert client.post(f"/api/shoots/{sid}/reanalyze").status_code == 200
+    analyze(app, sid)
+    result = detail(client, sid)
+    assert result["status"] == "complete"
+    assert result["score"] == previous["score"]
+    assert next(r for r in result["runs"] if r["id"] == previous["current_run_id"]) == previous["runs"][0]
+    assert len(calls) == (0 if scenario == "absent" else 1)
+    analyzed = result["photos"][0]["analysis"]
+    inputs = analyzed["context"]["evidence"]
+    check = next(c for c in result["qc_evidence"]["checks"] if c["check_id"] == "shot_classification")
+    assert (check["execution"], check["outcome"], check["reason_code"]) == (execution, outcome, reason)
+    assert check["model_id"] == model_id
+    assert check["run_id"] == result["current_run_id"]
+    assert check["input_provenance"] == {
+        k: v for k, v in inputs.items() if k not in ("checks", "evidence_schema_version")
+    }
+    assert check in inputs["checks"]
+    run = next(r for r in result["runs"] if r["id"] == result["current_run_id"])
+    assert check in run["check_results"]
+    assert inputs["resolved_shot"] == (
+        "front" if verified else "rear" if scenario == "threshold" else "unknown"
+    )
+    assert inputs["used_evidence"]["state"] == (
+        "verified" if verified else "predicted" if scenario == "threshold" else "unresolved"
+    )
+    if verified:
+        assert inputs["used_evidence"] == result["photos"][0]["shot_evidence"]
+    if scenario in ("low", "threshold"):
+        assert inputs["prediction"] == {
+            "evidence_schema_version": 1,
+            "state": "predicted",
+            "value": "rear",
+            "confidence": confidence,
+            "model_id": model_id,
+            "run_id": result["current_run_id"],
+            "source": "model",
+        }
+        assert analyzed["predicted_shot"] == "rear"
+        assert analyzed["confidence"] == confidence
+    else:
+        assert inputs["prediction"] is None
+        assert analyzed["predicted_shot"] is None and analyzed["confidence"] is None
+
+
 @pytest.mark.parametrize("confidence, expected", [(0.79, "unknown"), (0.8, "rear")])
 def test_prediction_threshold_precedence_and_freshness_Q01_Q03_Q08_Q09(
     client, app, monkeypatch, confidence, expected

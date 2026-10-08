@@ -137,7 +137,7 @@ def check_record(
     }
 
 
-def photo_checks(run, photo, findings, resolved, inputs, region, prediction_error=False):
+def photo_checks(run, photo, findings, resolved, inputs, region, prediction_execution):
     records = [
         check_record(
             key,
@@ -148,25 +148,33 @@ def photo_checks(run, photo, findings, resolved, inputs, region, prediction_erro
         )
         for key, kind in (("blur", "BLUR"), ("exposure", "EXPOSURE"), ("saturation", "SATURATION"))
     ]
+    # Classifier execution/outcome describes inference, independently of human
+    # evidence that may resolve the operational shot for downstream checks.
+    prediction = inputs["prediction"]
+    usable_prediction = (
+        prediction is not None
+        and bool(prediction["value"])
+        and prediction["value"] != "unknown"
+        and prediction["confidence"] is not None
+        and prediction["confidence"] >= 0.8
+    )
+    if prediction_execution == "error":
+        reason = "prediction_error"
+    elif prediction_execution == "unavailable":
+        reason = "model_unavailable"
+    elif usable_prediction:
+        reason = "resolved"
+    elif prediction and prediction["confidence"] is not None and prediction["confidence"] < 0.8:
+        reason = "low_confidence"
+    else:
+        reason = "unresolved_shot"
     records.append(
         check_record(
             "shot_classification",
             run,
-            execution=(
-                "error"
-                if prediction_error
-                else "completed"
-                if resolved != "unknown"
-                else "not_run"
-                if run.model_version_id
-                else "unavailable"
-            ),
-            outcome="pass" if resolved != "unknown" and not prediction_error else "unknown",
-            reason="prediction_error"
-            if prediction_error
-            else "resolved"
-            if resolved != "unknown"
-            else "unresolved_shot",
+            execution=prediction_execution,
+            outcome="pass" if prediction_execution == "completed" and usable_prediction else "unknown",
+            reason=reason,
             photo_id=photo.id,
             inputs=inputs,
         )
@@ -279,7 +287,7 @@ def analyze_shoot(factory, data, shoot_id: str):
                 path = resolved_file(data, photo.original_key)
                 metrics, score, findings = technical_metrics(path, shoot.policy["rules"])
                 predicted, confidence = None, None
-                prediction_error = False
+                prediction_execution = "unavailable"
                 if active:
                     from .classifier import predict
 
@@ -287,9 +295,10 @@ def analyze_shoot(factory, data, shoot_id: str):
                         predicted, confidence = predict(
                             resolved_file(data, active.artifact_key), active.classes, path
                         )
+                        prediction_execution = "completed"
                     except Exception:
                         LOG.exception("Shot prediction failed for %s", photo.id)
-                        prediction_error = True
+                        prediction_execution = "error"
                 resolved, used, prediction = resolve_shot(
                     photo, predicted, confidence, run.model_version_id, run.id
                 )
@@ -303,7 +312,7 @@ def analyze_shoot(factory, data, shoot_id: str):
                 }
                 provenance.append(inputs)
                 region = banner_region(shoot.policy["rules"], rank, resolved)
-                checks = photo_checks(run, photo, findings, resolved, inputs, region, prediction_error)
+                checks = photo_checks(run, photo, findings, resolved, inputs, region, prediction_execution)
                 all_checks.extend(checks)
                 context = {
                     "banner": region,
