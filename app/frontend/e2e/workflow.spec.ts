@@ -694,3 +694,281 @@ test("shot catalog rename reorder delete restore and library menu editing", asyn
     fullPage: true,
   });
 });
+
+test("evidence: defaults, explicit verification, stale coverage and export", async ({
+  page,
+  request,
+}) => {
+  const created = await request.post("/api/shoots", {
+    multipart: {
+      metadata: JSON.stringify({
+        mode: "general",
+        purpose: "evaluation",
+        shoot_date: "2026-10-08",
+        stock_number: "EVIDENCE-101",
+        shot_types: ["front"],
+      }),
+      files: { name: "front.png", mimeType: "image/png", buffer: png() },
+    },
+  });
+  expect(created.status()).toBe(201);
+  const sid = (await created.json()).id;
+  await expect
+    .poll(
+      async () =>
+        (await (await request.get(`/api/shoots/${sid}`)).json()).status,
+    )
+    .toBe("complete");
+  const first = await (await request.get(`/api/shoots/${sid}`)).json();
+  const pid = first.photos[0].id;
+  await request.post(`/api/photos/${pid}/training`);
+  await page.goto("/");
+  await page
+    .getByRole("navigation", { name: "Main navigation" })
+    .getByRole("button", { name: "Training Library", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: /EVIDENCE-101/ })
+    .first()
+    .click();
+  const dialog = page.getByRole("dialog");
+  await expect(
+    dialog.getByText(/Not exportable: Unverified Label/i),
+  ).toBeVisible();
+  await expect(
+    dialog.getByLabel("Approved for training", { exact: true }),
+  ).toBeChecked();
+  await expect(dialog.locator(".issue.resolved")).toHaveCount(0);
+  await dialog
+    .getByRole("button", { name: "Save labels", exact: true })
+    .click();
+  await expect(page.getByRole("status")).toContainText("Training labels saved");
+  expect(
+    (await (await request.get(`/api/shoots/${sid}`)).json()).photos[0].training
+      .exportable,
+  ).toBe(false);
+  const fields = dialog.getByRole("group", {
+    name: "Fields reviewed for verification",
+  });
+  for (const name of [
+    "Angle",
+    "Blur",
+    "Crop",
+    "Exposure",
+    "Saturation",
+    "Framing",
+    "Overall",
+  ]) {
+    await fields.getByLabel(new RegExp(`^${name}`)).uncheck();
+  }
+  await dialog
+    .getByRole("button", { name: "Verify selected labels", exact: true })
+    .click();
+  await expect(
+    dialog.getByText("Exportable verified shot label.", { exact: false }),
+  ).toBeVisible();
+  const verified = await (await request.get(`/api/shoots/${sid}`)).json();
+  expect(verified.photos[0].training.label_evidence.shot_type.state).toBe(
+    "verified",
+  );
+  expect(verified.photos[0].training.label_evidence.blur.state).toBe(
+    "suggested",
+  );
+  await dialog
+    .getByRole("button", { name: "Confirm operational shot", exact: true })
+    .click();
+  await dialog
+    .getByText("Analysis coverage & history", { exact: true })
+    .click();
+  await expect(
+    dialog.getByText(/Shot evidence changed; reanalyze/),
+  ).toBeVisible();
+  await dialog
+    .getByRole("button", { name: "Reanalyze shoot", exact: true })
+    .click();
+  await expect
+    .poll(
+      async () =>
+        (await (await request.get(`/api/shoots/${sid}`)).json()).qc_evidence
+          .freshness,
+    )
+    .toBe("current");
+  await expect(dialog.getByText(/QC coverage Incomplete/)).toBeVisible();
+  await expect(
+    dialog.getByRole("button", { name: "Reanalyze shoot", exact: true }),
+  ).toBeEnabled();
+  await dialog.locator(".history").scrollIntoViewIfNeeded();
+  await page.screenshot({
+    path: "test-results/verified-coverage.png",
+    fullPage: true,
+  });
+  await dialog
+    .getByRole("button", { name: "Close details", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Export verified dataset", exact: true })
+    .click();
+  await expect(page.getByRole("status")).toContainText(
+    "Verified dataset snapshot saved",
+  );
+  const href = await page
+    .getByRole("link", { name: "Download manifest", exact: true })
+    .getAttribute("href");
+  const manifest = await (await request.get(href!)).json();
+  expect(manifest.schema_version).toBe(2);
+  expect(
+    manifest.entries.some((e: { photo_id: string }) => e.photo_id === pid),
+  ).toBe(true);
+});
+
+test("evidence: verify next preserves position and selected confirmation semantics", async ({
+  page,
+  request,
+}) => {
+  const staged = await request.post("/api/uploads", {
+    data: {
+      count: 2,
+      metadata: {
+        mode: "general",
+        purpose: "training",
+        shoot_date: "2026-10-08",
+        stock_number: "VERIFY-NEXT",
+        shot_types: ["front", "rear"],
+      },
+    },
+  });
+  const url = `/api/uploads/${(await staged.json()).id}`;
+  for (const i of [0, 1]) {
+    expect(
+      (
+        await request.put(`${url}/photos/${i}`, {
+          multipart: {
+            file: { name: `${i}.png`, mimeType: "image/png", buffer: png() },
+          },
+        })
+      ).ok(),
+    ).toBe(true);
+  }
+  const completed = await request.post(`${url}/complete`);
+  const sid = (await completed.json()).id;
+  await expect
+    .poll(
+      async () =>
+        (await (await request.get(`/api/shoots/${sid}`)).json()).status,
+    )
+    .toBe("complete");
+  await page.goto("/");
+  await page
+    .getByRole("navigation", { name: "Main navigation" })
+    .getByRole("button", { name: "Training Library", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: /VERIFY-NEXT/ })
+    .first()
+    .click();
+  const dialog = page.getByRole("dialog");
+  await dialog
+    .getByRole("button", { name: "Verify + next", exact: true })
+    .click();
+  await expect(
+    dialog.getByRole("heading", { name: "Photo 2", exact: true }),
+  ).toBeVisible();
+  const d = await (await request.get(`/api/shoots/${sid}`)).json();
+  expect(d.photos[0].training.exportable).toBe(true);
+  expect(
+    Object.values(d.photos[0].training.label_evidence).every(
+      (e: unknown) => (e as { state: string }).state === "verified",
+    ),
+  ).toBe(true);
+  expect(d.photos[1].training.exportable).toBe(false);
+  expect(d.photos[1].training.labels.blur).toBe("good");
+  await dialog
+    .getByRole("button", { name: "Save labels", exact: true })
+    .click();
+  await expect(page.getByRole("status")).toContainText("Training labels saved");
+  const after = await (await request.get(`/api/shoots/${sid}`)).json();
+  expect(after.photos[1].training.exportable).toBe(false);
+});
+
+test("evidence: legacy and prediction display stay distinct from approval", async ({
+  page,
+  request,
+}) => {
+  const created = await request.post("/api/shoots", {
+    multipart: {
+      metadata: JSON.stringify({
+        mode: "general",
+        purpose: "training",
+        shoot_date: "2026-10-08",
+        stock_number: "LEGACY-EVIDENCE",
+        shot_types: ["front"],
+      }),
+      files: { name: "front.png", mimeType: "image/png", buffer: png() },
+    },
+  });
+  const sid = (await created.json()).id;
+  await expect
+    .poll(
+      async () =>
+        (await (await request.get(`/api/shoots/${sid}`)).json()).status,
+    )
+    .toBe("complete");
+  const fixture = await (await request.get(`/api/shoots/${sid}`)).json();
+  // Read-only UI fixture represents preserved pre-A.1 records and model provenance.
+  fixture.photos[0].shot_evidence.state = "legacy_unverified";
+  for (const ev of Object.values(fixture.photos[0].training.label_evidence)) {
+    (ev as { state: string }).state = "legacy_unverified";
+  }
+  fixture.photos[0].analysis.predicted_shot = "rear";
+  fixture.photos[0].analysis.confidence = 0.9;
+  fixture.photos[0].analysis.context.evidence.prediction = {
+    state: "predicted",
+    model_id: "fixture-model",
+  };
+  fixture.qc_evidence = {
+    ...fixture.qc_evidence,
+    evidence_schema_version: 0,
+    coverage: "unknown",
+    freshness: "historical_unknown",
+    checks: [],
+  };
+  await page.route(`**/api/shoots/${sid}`, (route) =>
+    route.fulfill({ json: fixture }),
+  );
+  await page.goto("/");
+  await page
+    .getByRole("navigation", { name: "Main navigation" })
+    .getByRole("button", { name: "Training Library", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: /LEGACY-EVIDENCE/ })
+    .first()
+    .click();
+  const dialog = page.getByRole("dialog");
+  await expect(
+    dialog.getByText("Legacy Unverified", { exact: true }).first(),
+  ).toBeVisible();
+  await expect(
+    dialog.getByText(/Model suggestion: Rear.*90%.*fixture-model/),
+  ).toBeVisible();
+  await dialog
+    .getByText(/Model suggestion: Rear.*90%.*fixture-model/)
+    .scrollIntoViewIfNeeded();
+  await page.screenshot({
+    path: "test-results/prediction-provenance.png",
+    fullPage: true,
+  });
+  await dialog
+    .getByText("Analysis coverage & history", { exact: true })
+    .click();
+  await expect(
+    dialog.getByText(/Historical evidence is unknown/),
+  ).toBeVisible();
+  await expect(
+    dialog.getByLabel("Approved for training", { exact: true }),
+  ).toBeChecked();
+  await page.screenshot({
+    path: "test-results/legacy-prediction.png",
+    fullPage: true,
+  });
+});

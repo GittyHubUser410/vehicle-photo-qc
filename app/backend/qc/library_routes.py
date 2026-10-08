@@ -7,6 +7,7 @@ from pathlib import Path
 from fastapi import HTTPException
 from sqlalchemy import func, select
 
+from .evidence import exclusion_reasons, is_verified
 from .db import Dealer, Group, Photo, Photographer, Shoot, ShotType, TrainingExample, now
 from .schemas import ShotEditInput, ShotOrderInput, TrainingMembershipInput, VehicleEditInput
 from .workflows import change_labels, training_example
@@ -176,6 +177,12 @@ def register_library_routes(app, factory, policy_for, required):
                 shot = example.labels.get("shot_type", "unknown")
                 if shot == "unknown":
                     unknown += 1
+                for quality in ("blur", "exposure", "crop", "saturation", "framing", "angle", "overall"):
+                    if example.labels.get(quality) not in (None, "unknown", "good") and is_verified(
+                        (example.label_evidence or {}).get(quality), example.labels.get(quality)
+                    ):
+                        by_quality[quality].add(photo.sha256)
+                if exclusion_reasons(example, photo, shoot):
                     continue
                 ready.add(photo.sha256)
                 by_class[shot].add(photo.sha256)
@@ -184,14 +191,16 @@ def register_library_routes(app, factory, policy_for, required):
                     (shoot.dealership_id or shoot.source, shoot.stock_number.casefold() or shoot.id)
                 )
                 by_dealer[shoot.dealership_id or "general"].add(photo.sha256)
-                for quality in ("blur", "exposure", "crop", "saturation", "framing", "angle", "overall"):
-                    if example.labels.get(quality) not in (None, "unknown", "good"):
-                        by_quality[quality].add(photo.sha256)
             dealers = {d.id: d.name for d in session.scalars(select(Dealer))}
             return {
                 "total": len(rows),
                 "approved": approved,
                 "unique_labeled": len(ready),
+                "exportable": sum(not exclusion_reasons(t, p, s) for t, p, s in rows),
+                "verified": sum(
+                    is_verified((t.label_evidence or {}).get("shot_type"), t.labels.get("shot_type"))
+                    for t, _, _ in rows
+                ),
                 "unassigned": unknown,
                 "classes": [
                     {

@@ -134,7 +134,7 @@ def test_trash_filters_preserves_files_and_restores_without_approval(client, app
         client.post(f"/api/photos/{p['id']}/training")
     photos = detail(client, sid)["photos"]
     for p in photos:
-        save(client, p)
+        save(client, p, verify_fields=["shot_type"])
     exported = client.post("/api/datasets").json()
     snapshot = client.get(exported["download_url"]).json()
     path = app.state.data / f"datasets/{snapshot['id']}.json"
@@ -153,7 +153,7 @@ def test_trash_filters_preserves_files_and_restores_without_approval(client, app
     assert client.get("/api/dashboard").json()["training_count"] == 0
     assert client.get(f"/api/photos/{first['id']}/original").status_code == 404
     assert client.post("/api/datasets").status_code == 422
-    with pytest.raises(ValueError, match="Trash"):
+    with pytest.raises(ValueError, match="approved"):
         read_manifest(path, app.state.data)
     assert path.read_bytes() == original_snapshot
     for p in photos:
@@ -243,6 +243,7 @@ def test_v1_migration_preserves_rows_labels_files_and_models(tmp_path):
     old.state.engine.dispose() if hasattr(old.state, "engine") else None
     database = tmp_path / "qc.db"
     with sqlite3.connect(database) as conn:
+        strip_v4(conn)
         for table, column in [
             ("vehicle_shoots", "metadata_revision"),
             ("vehicle_shoots", "deleted_at"),
@@ -275,10 +276,24 @@ def test_v1_migration_preserves_rows_labels_files_and_models(tmp_path):
         assert got["training"]["labels"]["exposure"] == "unknown"
         assert got["training"]["labels"]["shot_type"] == "interior"
     with sqlite3.connect(database) as conn:
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 3
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == 4
         for table, (columns, rows) in before.items():
             assert conn.execute(f"SELECT {','.join(columns)} FROM {table} ORDER BY rowid").fetchall() == rows
-    assert (tmp_path / "migration-backups/before-v2.db").is_file()
+    assert list((tmp_path / "migration-backups").glob("before-v4-from-v1-*.db"))
     for key, content in files.items():
         assert (tmp_path / key).read_bytes() == content
     create_app(tmp_path, start_worker=False)  # Idempotent upgrade/startup.
+
+
+def strip_v4(conn):
+    """Recreate pre-evidence columns, rather than merely falsifying the version stamp."""
+    conn.execute("DROP TABLE photo_shot_revisions")
+    for table, column in [
+        ("photos", "shot_revision"),
+        ("photos", "shot_evidence"),
+        ("training_examples", "label_evidence"),
+        ("training_label_revisions", "label_evidence"),
+        ("analysis_runs", "check_results"),
+        ("analysis_runs", "evidence_schema_version"),
+    ]:
+        conn.execute(f"ALTER TABLE {table} DROP COLUMN {column}")

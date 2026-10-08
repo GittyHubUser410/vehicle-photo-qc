@@ -11,7 +11,7 @@ import {
 import { api, label, send, thumbnail, useStored, vehicleName } from "./api";
 import { ShotSelect } from "./ShotSelect";
 import { VehicleEditor } from "./VehicleEditor";
-import { Badge, ErrorBox, Field, Modal, Score } from "./ui";
+import { Badge, EvidenceBadge, ErrorBox, Field, Modal, Score } from "./ui";
 import type {
   Config,
   Detail as ShootDetail,
@@ -346,7 +346,7 @@ export function Detail({
               Technical checks are estimates. Vehicle crop and angle detection
               are not available yet.{" "}
               {data.checks.required_shots === "needs_shot_labels"
-                ? "Label every shot type to check missing shots and sequence."
+                ? "Confirm operational shot labels to check missing shots and sequence; model predictions can also supply provisional coverage."
                 : data.checks.required_shots === "needs_reanalysis"
                   ? "Shot types changed. Reanalyze to update required-shot checks."
                   : ""}
@@ -603,14 +603,32 @@ export function Detail({
                   onChange={(value) =>
                     action(`/photos/${photo.id}/shot`, "PUT", {
                       shot_type: value,
+                      revision: photo.shot_revision,
                     })
                   }
                 />
+                <EvidenceBadge evidence={photo.shot_evidence} />
+                <button
+                  className="button secondary"
+                  disabled={busy || pending}
+                  onClick={() =>
+                    action(`/photos/${photo.id}/shot`, "PUT", {
+                      shot_type: photo.shot_type,
+                      revision: photo.shot_revision,
+                      verify: true,
+                    })
+                  }
+                >
+                  Confirm operational shot
+                </button>
                 {photo.analysis?.predicted_shot && (
                   <p className="form-note">
                     Model suggestion: {label(photo.analysis.predicted_shot)} ·{" "}
                     {Math.round((photo.analysis.confidence || 0) * 100)}%
-                    confidence
+                    confidence · model{" "}
+                    {photo.analysis.context.evidence?.prediction?.model_id ||
+                      "legacy / unknown"}
+                    · run {photo.analysis.run_id}
                   </p>
                 )}
                 <button
@@ -642,7 +660,7 @@ export function Detail({
                   .filter((i) => i.photo_id === photo.id || !i.photo_id)
                   .map((i) => (
                     <div
-                      className={`issue ${i.severity} ${photo.training?.eligible || (data.reviews.some((r) => r.resolved_at && r.run_id === data.current_run_id && (r.photo_id === photo.id || !r.photo_id)) && !needsReview(photo.id)) ? "resolved" : ""}`}
+                      className={`issue ${i.severity} ${data.reviews.some((r) => r.resolved_at && r.run_id === data.current_run_id && (r.photo_id === photo.id || !r.photo_id)) && !needsReview(photo.id) ? "resolved" : ""}`}
                       key={i.id}
                     >
                       <Badge tone={i.severity === "severe" ? "danger" : "warn"}>
@@ -758,11 +776,32 @@ export function Detail({
           )}
           <details className="panel history">
             <summary>Analysis coverage & history</summary>
+            <p className="form-note">
+              Technical baseline score · QC coverage{" "}
+              {label(data.qc_evidence.coverage)} ·{" "}
+              {label(data.qc_evidence.freshness)}.
+              {data.qc_evidence.freshness === "stale" &&
+                " Shot evidence changed; reanalyze before using current coverage."}
+              {data.qc_evidence.evidence_schema_version === 0 &&
+                " Historical evidence is unknown; legacy statuses do not establish coverage."}{" "}
+              Complete coverage describes execution, not approval or passing
+              outcomes.
+            </p>
             <div className="coverage-list">
-              {Object.entries(data.checks).map(([k, v]) => (
-                <div key={k}>
-                  <span>{label(k)}</span>
-                  <Badge>{label(v)}</Badge>
+              {data.qc_evidence.checks.map((c, index) => (
+                <div key={index}>
+                  <span>
+                    {c.photo_id
+                      ? `Photo ${data.photos.find((p) => p.id === c.photo_id)?.position} · `
+                      : ""}
+                    {label(c.check_id)}
+                  </span>
+                  <span>
+                    {label(c.applicability)} · {label(c.execution)} ·{" "}
+                    {label(c.outcome)}
+                    <br />
+                    <small>{label(c.reason_code)}</small>
+                  </span>
                 </div>
               ))}
             </div>
@@ -809,12 +848,24 @@ function TrainingEditor({
   const [eligible, setEligible] = useState(photo.training!.eligible);
   const [busy, setBusy] = useState(false);
   const [actor, setActor] = useStored("qc:reviewer", "Local reviewer", true);
-  async function save(andNext = false) {
+  const fields = [
+    "shot_type",
+    "angle",
+    "blur",
+    "crop",
+    "exposure",
+    "saturation",
+    "framing",
+    "overall",
+  ];
+  const [selectedFields, setSelectedFields] = useState<string[]>(fields);
+  async function save(andNext = false, verify = false) {
     setBusy(true);
     try {
       await send(`/photos/${photo.id}/training`, "PUT", {
         labels,
         eligible,
+        verify_fields: verify ? selectedFields : [],
         revision: photo.training!.revision,
         actor,
       });
@@ -895,10 +946,34 @@ function TrainingEditor({
         Approved for training
       </label>
       <p className="form-note">
-        New training photos start approved. Choose a shot type before export.
+        {photo.training!.exportable
+          ? "Exportable verified shot label."
+          : `Not exportable: ${photo.training!.exclusion_reasons.map(label).join(", ")}.`}{" "}
+        New training photos start approved. Approval is separate from
+        verification. Explicitly verify the reviewed shot label before export.
         Uncheck to exclude this photo from future datasets. Originals and
         previous snapshots remain unchanged.
       </p>
+      <fieldset>
+        <legend>Fields reviewed for verification</legend>
+        {fields.map((key) => (
+          <label className="checkbox" key={key}>
+            <input
+              type="checkbox"
+              checked={selectedFields.includes(key)}
+              onChange={(e) =>
+                setSelectedFields(
+                  e.target.checked
+                    ? [...selectedFields, key]
+                    : selectedFields.filter((k) => k !== key),
+                )
+              }
+            />
+            {label(key)}{" "}
+            <EvidenceBadge evidence={photo.training!.label_evidence[key]} />
+          </label>
+        ))}
+      </fieldset>
       <div className="button-row">
         <button
           className="button primary"
@@ -907,13 +982,20 @@ function TrainingEditor({
         >
           <Check size={15} /> Save labels
         </button>
+        <button
+          className="button primary"
+          disabled={busy || !actor.trim() || !selectedFields.length}
+          onClick={() => save(false, true)}
+        >
+          Verify selected labels
+        </button>
         {hasNext && (
           <button
             className="button secondary"
-            disabled={busy || !actor.trim()}
-            onClick={() => save(true)}
+            disabled={busy || !actor.trim() || !selectedFields.length}
+            onClick={() => save(true, true)}
           >
-            Save + next
+            Verify + next
           </button>
         )}
       </div>

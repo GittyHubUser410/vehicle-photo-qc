@@ -4,7 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from qc.main import create_app
-from test_revisions import batch, detail, save
+from test_revisions import batch, detail, save, strip_v4
 from test_workflows import analyze
 
 
@@ -113,6 +113,8 @@ def test_catalog_archive_rename_order_preserves_model_keys_and_restart(client, a
     assert client.put("/api/shot-types/order", json={"keys": keys[:-1]}).status_code == 409
     assert client.patch("/api/shot-types/unknown", json={"archived": True}).status_code == 422
     assert client.get("/api/sequence").json()["sequence"][1] == "unknown"
+    for photo in original:
+        save(client, photo, verify_fields=["shot_type"])
     # Historical labels remain valid for dataset export even when a category is hidden.
     assert client.post("/api/datasets").status_code == 201
     with TestClient(create_app(tmp_path, start_worker=False)) as restarted:
@@ -132,9 +134,9 @@ def test_readiness_counts_human_labels_unique_bytes_and_excludes_trash(client, a
     sid = batch(client, purpose="training", shot_types=["front", "rear", "unknown"])
     dup = batch(client, purpose="training", shot_types=["front", "rear", "unknown"])
     p = detail(client, sid)["photos"][0]
-    save(client, p, labels={**p["training"]["labels"], "blur": "bad"})
+    save(client, p, labels={**p["training"]["labels"], "blur": "bad"}, verify_fields=["shot_type", "blur"])
     data = client.get("/api/training/readiness").json()
-    assert data["approved"] == 6 and data["unique_labeled"] == 2 and data["unassigned"] == 2
+    assert data["approved"] == 6 and data["unique_labeled"] == 1 and data["unassigned"] == 2
     assert next(c for c in data["quality"] if c["key"] == "blur")["count"] == 1
     analyze(app, sid)
     assert client.post(f"/api/shoots/{sid}/trash", json={"scope": "training"}).status_code == 200
@@ -152,12 +154,18 @@ def test_v2_additive_migration_keeps_existing_records_and_files(tmp_path):
         before = detail(client, sid)
     database = tmp_path / "qc.db"
     with sqlite3.connect(database) as conn:
+        strip_v4(conn)
         conn.execute("ALTER TABLE shot_types DROP COLUMN archived")
         conn.execute("ALTER TABLE vehicle_shoots DROP COLUMN metadata_revision")
         conn.execute("PRAGMA user_version=2")
     with TestClient(create_app(tmp_path, start_worker=False)) as client:
         after = detail(client, sid)
-        assert after == before
-    assert (tmp_path / "migration-backups/before-v3.db").exists()
+        # Values survive; only additive evidence is new and honestly legacy-unverified.
+        for old_photo, new_photo in zip(before["photos"], after["photos"]):
+            assert new_photo["training"]["labels"] == old_photo["training"]["labels"]
+            assert new_photo["shot_type"] == old_photo["shot_type"]
+            assert new_photo["shot_evidence"]["state"] == "legacy_unverified"
+        assert after["id"] == before["id"]
+    assert list((tmp_path / "migration-backups").glob("before-v4-from-v2-*.db"))
     with sqlite3.connect(database) as conn:
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 3
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == 4

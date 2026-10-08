@@ -130,7 +130,7 @@ export function Browse({
       }>("/datasets", "POST");
       setExported(result);
       notify(
-        "Dataset snapshot saved. Labels and split membership are frozen in this export.",
+        "Verified dataset snapshot saved. Evidence, labels and split membership are frozen in this export.",
       );
     } catch (e) {
       notify((e as Error).message, true);
@@ -155,11 +155,12 @@ export function Browse({
       {kind === "training" && (
         <div className="training-banner">
           <div>
-            <Badge tone="teal">HUMAN APPROVED</Badge>
+            <Badge tone="teal">TRAINING LIBRARY</Badge>
             <h2>Better examples. Better models.</h2>
             <p>
               Collect good, bad, and borderline photos. Label each issue
-              separately, then approve the example for training.
+              separately, explicitly verify reviewed labels, and approve
+              training use.
             </p>
           </div>
           <div className="button-stack">
@@ -172,7 +173,7 @@ export function Browse({
               onClick={exportTraining}
             >
               <Download size={16} />
-              {exporting ? "Exporting…" : "Export approved dataset"}
+              {exporting ? "Exporting…" : "Export verified dataset"}
             </button>
           </div>
         </div>

@@ -3,6 +3,7 @@ import json
 
 from sqlalchemy import select
 
+from .evidence import EVIDENCE_VERSION, exclusion_reasons
 from .db import Dataset, Photo, Shoot, TrainingExample, uid
 
 
@@ -18,8 +19,11 @@ def export_dataset(session, data, seed=42):
         )
         .order_by(Shoot.id, Photo.position)
     ).all()
+    rows = [(t, p, s) for t, p, s in rows if not exclusion_reasons(t, p, s)]
     if not rows:
-        raise ValueError("Choose shot types and approve photos in the Training Library first.")
+        raise ValueError(
+            "Explicitly verify shot labels and approve active photos in the Training Library, then export again."
+        )
     # Union connected shoots by exact duplicate bytes and known vehicle identity.
     # This prevents even transitive duplicates from crossing train/validation/test.
     parents = {s.id: s.id for _, _, s in rows}
@@ -52,6 +56,9 @@ def export_dataset(session, data, seed=42):
         entries.append(
             {
                 "photo_id": photo.id,
+                "training_example_id": example.id,
+                "label_evidence": example.label_evidence,
+                "approval_snapshot": example.eligible,
                 "shoot_id": shoot.id,
                 "group_id": group,
                 "split": "train" if bucket < 70 else "validation" if bucket < 85 else "test",
@@ -68,7 +75,9 @@ def export_dataset(session, data, seed=42):
         )
     dataset_id = uid()
     document = {
-        "schema_version": 1,
+        "schema_version": 2,
+        "purpose": "shot_type",
+        "evidence_schema_version": EVIDENCE_VERSION,
         "id": dataset_id,
         "seed": seed,
         "split_method": "grouped by shoot, known vehicle, and exact duplicates; 70/15/15 hash allocation",

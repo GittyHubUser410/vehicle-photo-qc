@@ -49,7 +49,41 @@ export interface Config {
   shot_type_labels: Record<string, string>;
   default_rules: Rules;
 }
+export interface Evidence {
+  evidence_schema_version: 1;
+  state: "suggested" | "verified" | "legacy_unverified";
+  source: string;
+  value: string;
+  value_revision: number;
+  recorded_at: string | null;
+  actor_id: string;
+  actor_display: string;
+  actor_basis: "authenticated" | "local_declared" | "system";
+}
+export interface QCCheck {
+  check_id: string;
+  applicability: "applicable" | "not_applicable" | "unknown";
+  execution: "completed" | "not_run" | "unavailable" | "error";
+  outcome: "pass" | "concern" | "unknown";
+  reason_code: string;
+  scope: "photo" | "shoot";
+  photo_id: string | null;
+  run_id: string;
+  model_id: string | null;
+  input_provenance: Record<string, unknown>;
+}
+export interface QCEnvelope {
+  evidence_schema_version: 0 | 1;
+  run_id: string | null;
+  score_scope: "technical_baseline";
+  coverage: "unknown" | "incomplete" | "complete";
+  freshness: "historical_unknown" | "stale" | "current";
+  checks: QCCheck[];
+}
 export interface Training {
+  label_evidence: Record<string, Evidence>;
+  exportable: boolean;
+  exclusion_reasons: string[];
   id: string;
   labels: Record<string, string>;
   eligible: boolean;
@@ -58,6 +92,8 @@ export interface Training {
   updated_at: string;
 }
 export interface Photo {
+  shot_revision: number;
+  shot_evidence: Evidence;
   banner: {
     applicable: boolean | null;
     mode: string;
@@ -77,6 +113,10 @@ export interface Photo {
   shot_type: string;
   training: Training | null;
   analysis: {
+    run_id: string;
+    context: {
+      evidence?: { prediction?: { model_id: string | null; state: string } };
+    };
     score: number;
     metrics: Record<string, number>;
     predicted_shot: string | null;
@@ -112,6 +152,7 @@ export interface Review {
   }[];
 }
 export interface Shoot {
+  qc_evidence: QCEnvelope;
   id: string;
   dealership_id: string | null;
   dealership_name: string;
@@ -154,6 +195,8 @@ export interface Detail extends Shoot {
   runs: {
     id: string;
     created_at: string;
+    evidence_schema_version: number;
+    check_results: QCCheck[];
     pipeline_version: string;
     status: string;
     model_version_id: string | null;

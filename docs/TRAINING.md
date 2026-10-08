@@ -2,7 +2,7 @@
 
 ## What this model learns
 
-The included optional model classifies **shot type** from the approved examples in its dataset. The expanded shared shot catalog includes exterior, interior, controls, detail categories, and legacy labels. Existing models retain their original vocabulary; adding categories does not retrain or alter them.
+The included optional model classifies **shot type** from the approved examples with explicitly verified shot labels in its dataset. The expanded shared shot catalog includes exterior, interior, controls, detail categories, and legacy labels. Existing models retain their original vocabulary; adding categories does not retrain or alter them.
 
 It does **not** learn crop quality, angle acceptability, plastic, or overall dealership quality. The app collects those labels now so specialized models can be added later without relabeling everything. The initial sharpness/exposure/saturation checks remain image-processing heuristics.
 
@@ -12,7 +12,7 @@ It does **not** learn crop quality, angle acceptability, plastic, or overall dea
 2. Keep the same dealership/source and stock number for repeated shoots of the same vehicle. This helps keep that vehicle in a single data split. For outside sources, use a consistent source name and vehicle identifier in stock number. No VIN decoding or automatic vehicle identity matching is implemented.
 3. Label the shot type separately from its quality. A blurry front shot is still a front shot.
 4. Use driver/passenger relative to the vehicle, not to the image viewer. Record and consistently apply your policy for right-hand-drive vehicles before mixing them into training.
-5. New examples default to **Good** to reduce entry. New training examples start approved; inspect these defaults and uncheck approval when needed. Copy Settings and bulk paste preserve shot types, but clear approval. Mark defect dimensions independently. Use **Unknown** if you have not inspected a dimension; absence of a label does not mean good.
+5. New examples default to **Good** to reduce entry. Defaults are Suggested, not verified truth. Choose reviewed fields and use **Verify selected labels** or **Verify + next**. **Save labels** alone never verifies changed values. Verification can confirm Unknown honestly, but Unknown is not a classifier target. New training examples start approved; inspect these defaults and uncheck approval when needed. Copy Settings and bulk paste preserve shot types, but clear approval. Mark defect dimensions independently. Use **Unknown** if you have not inspected a dimension; absence of a label does not mean good.
 6. Add environmental context where practical: lighting, wet/snow/dry ground, and location. Season defaults to Northern Hemisphere meteorological season by shoot date and can be overridden at import.
 7. **Approved for training** starts checked on new examples. Uncheck it to exclude a photo; review the label. Changing a prediction does not silently approve training data.
 
@@ -20,7 +20,7 @@ Begin with enough independent shoots to show each target shot class across diffe
 
 ## Export a frozen dataset
 
-Click **Export approved dataset** in Training Library. A JSON manifest is saved under `data/datasets/` and is available to download. It records photo IDs, original-file keys and hashes, label revisions, contextual fields, and split membership. It does not copy or expose image files in GitHub.
+Click **Export verified dataset** in Training Library. A JSON manifest is saved under `data/datasets/` and is available to download. Schema 2 records training-example and photo IDs, original-file keys and hashes, label revisions, per-field evidence, approval snapshot, contextual fields, and split membership. Shot exports need only current verified shot evidence; unrelated quality defaults need not be verified. It does not copy or expose image files in GitHub.
 
 - All photos from a shoot stay together.
 - Repeated vehicles with the same source/dealership and stock number stay together.
@@ -30,9 +30,11 @@ Click **Export approved dataset** in Training Library. A JSON manifest is saved 
 
 Perceptually similar/recompressed images and vehicles entered under different identities are **not** automatically detected. Review the collection for those before training. Do not move individual photographs across splits to make the ratios look better.
 
-Trashed photos are excluded from new exports and future training runs, including runs using older manifests against the current data directory. Restore and review them if they should be included again. Existing holdout evaluation uses the unchanged historical snapshot.
+Trashed photos are excluded from new exports and future training runs, including runs using older manifests against the current data directory. Restore and review them if they should be included again. For schema 2, training also excludes changed or revoked shot evidence and never substitutes current labels. Holdout evaluation uses the unchanged verified snapshot even after later corrections/trash, while still checking registered manifest hash/content and original-image hashes. This frozen-snapshot behavior does not imply current approval.
 
 **Use the same saved manifest when comparing model candidates.** New exports are new snapshots; adding data or connecting previously separate groups can change split assignment. Do not use a regenerated snapshot as though it were the same held-out benchmark. Long-term locked test-cohort management is a future feature.
+
+Legacy schema-1 exports remain historical/read-only. Both train and evaluate reject them before model or metric writes: reverify relevant shot labels and export a new schema-2 dataset. Existing models and metrics are retained, without retroactive claims of verified training provenance. For preservation tooling only, `ml.common.read_manifest(path, data, inspect_legacy=True)` allows read-only legacy inspection; production runners never enable it.
 
 ## Install PyTorch for your PC
 
@@ -74,6 +76,6 @@ This evaluates the candidate on its saved dataset's test split and records the r
 
 Open **Models & Help** to inspect metrics. Check per-class performance, not just overall accuracy. Inspect representative errors, including snow, dark vehicles, mixed lighting, and each dealership. When appropriate, choose **Activate this model**. Previous active versions become archived and remain available for rollback. You can disable automatic classification at any time.
 
-Runtime classification uses CPU inference so the app does not require a GPU to open. It applies the exact same torchvision preprocessing as training. Human operational shot labels override predictions. Low-confidence predictions leave the shot unknown; missing-shot checks then defer. An 80% softmax threshold is only an initial screening setting, not a calibrated correctness guarantee.
+Runtime classification uses CPU inference so the app does not require a GPU to open. It applies the exact same torchvision preprocessing as training. Verified human operational shot labels override predictions; suggested sequences and training-only labels do not. Low-confidence predictions leave the shot unknown; missing-shot checks then defer. An 80% softmax threshold is only an initial screening setting, not a calibrated correctness guarantee.
 
 The included training runner must still be tested against your actual dataset and RTX hardware. A passing software test is not evidence that the classifier is accurate enough for manager decisions.

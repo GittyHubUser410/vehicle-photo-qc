@@ -8,6 +8,7 @@ import numpy as np
 from PIL import Image, ImageOps
 from sqlalchemy import select
 
+from .evidence import EVIDENCE_VERSION, resolve_shot
 from .db import Issue, Measurement, ModelVersion, Photo, Review, Run, Shoot, now
 from .media import resolved_file
 from .banner import banner_region, banner_overlap
@@ -107,6 +108,159 @@ def coverage_findings(shot_types: list[str], rules: dict, general: bool):
     return findings, "checked"
 
 
+def check_record(
+    check_id,
+    run,
+    applicability="applicable",
+    execution="completed",
+    outcome="pass",
+    reason="measured",
+    photo_id=None,
+    inputs=None,
+):
+    return {
+        "check_id": check_id,
+        "applicability": applicability,
+        "execution": execution,
+        "outcome": outcome,
+        "reason_code": reason,
+        "scope": "photo" if photo_id else "shoot",
+        "photo_id": photo_id,
+        "input_provenance": inputs or {},
+        "run_id": run.id,
+        "rule_version": {
+            "dealer": run.policy_snapshot.get("dealer_version"),
+            "group": run.policy_snapshot.get("group_version"),
+        },
+        "model_id": run.model_version_id,
+        "pipeline_version": run.pipeline_version,
+    }
+
+
+def photo_checks(run, photo, findings, resolved, inputs, region, prediction_execution):
+    records = [
+        check_record(
+            key,
+            run,
+            outcome="concern" if any(f[0] == kind for f in findings) else "pass",
+            photo_id=photo.id,
+            inputs=inputs,
+        )
+        for key, kind in (("blur", "BLUR"), ("exposure", "EXPOSURE"), ("saturation", "SATURATION"))
+    ]
+    # Classifier execution/outcome describes inference, independently of human
+    # evidence that may resolve the operational shot for downstream checks.
+    prediction = inputs["prediction"]
+    usable_prediction = (
+        prediction is not None
+        and bool(prediction["value"])
+        and prediction["value"] != "unknown"
+        and prediction["confidence"] is not None
+        and prediction["confidence"] >= 0.8
+    )
+    if prediction_execution == "error":
+        reason = "prediction_error"
+    elif prediction_execution == "unavailable":
+        reason = "model_unavailable"
+    elif usable_prediction:
+        reason = "resolved"
+    elif prediction and prediction["confidence"] is not None and prediction["confidence"] < 0.8:
+        reason = "low_confidence"
+    else:
+        reason = "unresolved_shot"
+    records.append(
+        check_record(
+            "shot_classification",
+            run,
+            execution=prediction_execution,
+            outcome="pass" if prediction_execution == "completed" and usable_prediction else "unknown",
+            reason=reason,
+            photo_id=photo.id,
+            inputs=inputs,
+        )
+    )
+    for key in ("vehicle_segmentation", "critical_crop", "angle"):
+        records.append(
+            check_record(
+                key,
+                run,
+                applicability="unknown" if resolved == "unknown" else "applicable",
+                execution="unavailable",
+                outcome="unknown",
+                reason="detector_unavailable",
+                photo_id=photo.id,
+                inputs=inputs,
+            )
+        )
+    applies = region["applicable"]
+    records.append(
+        check_record(
+            "banner_clearance",
+            run,
+            applicability="unknown" if applies is None else "applicable" if applies else "not_applicable",
+            execution="unavailable" if applies else "not_run",
+            outcome="unknown",
+            reason="needs_shot_label"
+            if applies is None
+            else "geometry_unavailable"
+            if applies
+            else "banner_disabled_or_out_of_scope",
+            photo_id=photo.id,
+            inputs=inputs,
+        )
+    )
+    return records
+
+
+def shoot_checks(run, shoot, shots, findings, provenance):
+    rules = shoot.policy["rules"]
+    general = shoot.mode == "general"
+    records = [
+        check_record(
+            "photo_count",
+            run,
+            applicability="not_applicable" if general or not rules["min_photos"] else "applicable",
+            execution="not_run" if general or not rules["min_photos"] else "completed",
+            outcome="unknown"
+            if general or not rules["min_photos"]
+            else "concern"
+            if any(f[0] == "PHOTO_COUNT" for f in findings)
+            else "pass",
+            reason="general_mode" if general else "not_configured" if not rules["min_photos"] else "counted",
+            inputs={"photo_count": len(shots)},
+        )
+    ]
+    for key, kinds in (("required_shots", ["MISSING_REQUIRED_SHOT"]), ("sequence", ["SEQUENCE"])):
+        applicable = (
+            not general and bool(rules["required_shots"]) and (key != "sequence" or rules["strict_sequence"])
+        )
+        unresolved = "unknown" in shots
+        records.append(
+            check_record(
+                key,
+                run,
+                applicability="applicable" if applicable else "not_applicable",
+                execution="not_run" if not applicable or unresolved else "completed",
+                outcome="unknown"
+                if not applicable or unresolved
+                else "concern"
+                if any(
+                    f[0] in kinds + (["MISSING_REQUIRED_SHOT"] if key == "sequence" else []) for f in findings
+                )
+                else "pass",
+                reason="general_mode"
+                if general
+                else "not_configured"
+                if not applicable
+                else "unresolved_shot"
+                if unresolved
+                else "checked",
+                inputs={"shots": provenance},
+            )
+        )
+    return records
+
+
 def analyze_shoot(factory, data, shoot_id: str):
     with factory() as session:
         shoot = session.get(Shoot, shoot_id)
@@ -119,6 +273,7 @@ def analyze_shoot(factory, data, shoot_id: str):
             pipeline_version=PIPELINE_VERSION,
             policy_snapshot=shoot.policy,
             model_version_id=active.id if active else None,
+            evidence_schema_version=EVIDENCE_VERSION,
         )
         session.add(run)
         session.commit()
@@ -127,24 +282,43 @@ def analyze_shoot(factory, data, shoot_id: str):
             photos = session.scalars(
                 select(Photo).where(Photo.shoot_id == shoot.id).order_by(Photo.position)
             ).all()
-            scores, shot_types, computed = [], [], []
+            scores, shot_types, computed, all_checks, provenance = [], [], [], [], []
             for rank, photo in enumerate(photos, 1):
                 path = resolved_file(data, photo.original_key)
                 metrics, score, findings = technical_metrics(path, shoot.policy["rules"])
                 predicted, confidence = None, None
+                prediction_execution = "unavailable"
                 if active:
                     from .classifier import predict
 
-                    predicted, confidence = predict(
-                        resolved_file(data, active.artifact_key), active.classes, path
-                    )
-                shot_types.append(
-                    photo.shot_type
-                    if photo.shot_type != "unknown"
-                    else (predicted if confidence and confidence >= 0.8 else "unknown")
+                    try:
+                        predicted, confidence = predict(
+                            resolved_file(data, active.artifact_key), active.classes, path
+                        )
+                        prediction_execution = "completed"
+                    except Exception:
+                        LOG.exception("Shot prediction failed for %s", photo.id)
+                        prediction_execution = "error"
+                resolved, used, prediction = resolve_shot(
+                    photo, predicted, confidence, run.model_version_id, run.id
                 )
-                region = banner_region(shoot.policy["rules"], rank, shot_types[-1])
-                context = {"banner": region, "banner_overlap": banner_overlap(region)}
+                shot_types.append(resolved)
+                inputs = {
+                    "shot_revision": photo.shot_revision,
+                    "shot_evidence": photo.shot_evidence,
+                    "resolved_shot": resolved,
+                    "used_evidence": used,
+                    "prediction": prediction,
+                }
+                provenance.append(inputs)
+                region = banner_region(shoot.policy["rules"], rank, resolved)
+                checks = photo_checks(run, photo, findings, resolved, inputs, region, prediction_execution)
+                all_checks.extend(checks)
+                context = {
+                    "banner": region,
+                    "banner_overlap": banner_overlap(region),
+                    "evidence": {"evidence_schema_version": EVIDENCE_VERSION, **inputs, "checks": checks},
+                }
                 computed.append((photo.id, metrics, score, predicted, confidence, findings, context))
                 scores.append(score)
             # Keep expensive image/model work outside the SQLite write transaction so
@@ -164,6 +338,8 @@ def analyze_shoot(factory, data, shoot_id: str):
                 add_findings(session, shoot, run.id, photo_id, findings)
             findings, coverage = coverage_findings(shot_types, shoot.policy["rules"], shoot.mode == "general")
             add_findings(session, shoot, run.id, None, findings)
+            all_checks.extend(shoot_checks(run, shoot, shot_types, findings, provenance))
+            run.check_results = all_checks
             shoot.score = round(sum(scores) / len(scores), 1) if scores else None
             shoot.checks = {
                 "technical": "baseline",
@@ -185,6 +361,28 @@ def analyze_shoot(factory, data, shoot_id: str):
             shoot.status = "failed"
             shoot.error = "Analysis could not finish. Check the server log, original files, and active model; then retry."
             run.status, run.completed_at = "failed", now()
+            run.check_results = [
+                check_record(
+                    key,
+                    run,
+                    execution="error" if key in ("blur", "exposure", "saturation") else "not_run",
+                    outcome="unknown",
+                    reason="analysis_failed",
+                )
+                for key in (
+                    "blur",
+                    "exposure",
+                    "saturation",
+                    "photo_count",
+                    "required_shots",
+                    "sequence",
+                    "shot_classification",
+                    "vehicle_segmentation",
+                    "critical_crop",
+                    "angle",
+                    "banner_clearance",
+                )
+            ]
             session.commit()
 
 

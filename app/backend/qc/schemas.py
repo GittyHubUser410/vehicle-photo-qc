@@ -105,6 +105,9 @@ def validated_shot(value: str) -> str:
 
 class ShotInput(Strict):
     shot_type: str
+    verify: bool = False
+    revision: int | None = Field(None, ge=0)
+    actor: str = Field("Local reviewer", min_length=1, max_length=150)
     _shot = field_validator("shot_type")(validated_shot)
 
 
@@ -123,9 +126,17 @@ class Labels(Strict):
 
 class LabelInput(Strict):
     labels: Labels
+    verify_fields: list[str] = Field(default_factory=list)
     eligible: bool = False
     actor: str = Field("Local reviewer", min_length=1, max_length=150)
-    revision: int = Field(0, ge=0)
+    revision: int = Field(ge=0)
+
+    @field_validator("verify_fields")
+    @classmethod
+    def verification_fields(cls, values):
+        if len(values) != len(set(values)) or set(values) - (set(Labels.model_fields) - {"note"}):
+            raise ValueError("Verify unique label fields only; note is not a training target.")
+        return values
 
     @model_validator(mode="after")
     def eligible_label(self):
@@ -172,3 +183,90 @@ class ShotOrderInput(Strict):
 class ShotEditInput(Strict):
     name: str | None = Field(None, min_length=1, max_length=150)
     archived: bool | None = None
+
+
+class EvidenceResponse(BaseModel):
+    evidence_schema_version: Literal[1]
+    state: Literal["suggested", "verified", "legacy_unverified"]
+    source: str
+    value: str
+    value_revision: int
+    recorded_at: str | None
+    actor_id: str
+    actor_display: str
+    actor_basis: Literal["authenticated", "local_declared", "system"]
+    source_ref: str | None = None
+
+
+class CheckResponse(BaseModel):
+    check_id: str
+    applicability: Literal["applicable", "not_applicable", "unknown"]
+    execution: Literal["completed", "not_run", "unavailable", "error"]
+    outcome: Literal["pass", "concern", "unknown"]
+    reason_code: str
+    scope: Literal["photo", "shoot"]
+    photo_id: str | None
+    input_provenance: dict
+    run_id: str
+    rule_version: dict
+    model_id: str | None
+    pipeline_version: str
+
+
+class QCResponse(BaseModel):
+    evidence_schema_version: Literal[0, 1]
+    run_id: str | None
+    score_scope: Literal["technical_baseline"]
+    coverage: Literal["unknown", "incomplete", "complete"]
+    freshness: Literal["historical_unknown", "stale", "current"]
+    checks: list[CheckResponse]
+
+
+class AdditiveResponse(BaseModel):
+    """Preserve all legacy fields while documenting the new evidence contract."""
+
+    model_config = ConfigDict(extra="allow")
+
+
+class TrainingResponse(AdditiveResponse):
+    id: str
+    labels: dict[str, str]
+    eligible: bool
+    revision: int
+    label_evidence: dict[str, EvidenceResponse]
+    exportable: bool
+    exclusion_reasons: list[str]
+
+
+class PhotoResponse(AdditiveResponse):
+    id: str
+    shot_type: str
+    shot_revision: int
+    shot_evidence: EvidenceResponse
+
+
+class DetailPhotoResponse(PhotoResponse):
+    training: TrainingResponse | None
+    analysis: dict | None
+
+
+class RunResponse(AdditiveResponse):
+    id: str
+    evidence_schema_version: int
+    check_results: list[CheckResponse]
+
+
+class ShootResponse(AdditiveResponse):
+    id: str
+    checks: dict[str, str]
+    qc_evidence: QCResponse
+
+
+class ShootDetailResponse(ShootResponse):
+    photos: list[DetailPhotoResponse]
+    runs: list[RunResponse]
+
+
+class ShootListResponse(BaseModel):
+    items: list[ShootResponse]
+    total: int

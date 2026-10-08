@@ -4,39 +4,80 @@ import sqlite3
 from collections import Counter
 from pathlib import Path
 
+from qc.evidence import is_verified
 from qc.media import resolved_file
 from qc.schemas import SHOT_TYPES
 
 
-def read_manifest(path, data, respect_trash=True):
+def read_manifest(path, data, respect_trash=True, *, inspect_legacy=False):
     manifest = json.loads(Path(path).read_text())
-    if manifest.get("schema_version") != 1 or not manifest.get("entries"):
-        raise ValueError("Expected a non-empty version 1 dataset export.")
+    schema = manifest.get("schema_version")
+    if schema == 1 and not inspect_legacy:
+        raise ValueError(
+            "Legacy schema 1 is not verified ground truth. Reverify labels and re-export a schema 2 dataset."
+        )
+    if schema not in (1, 2) or not manifest.get("entries"):
+        raise ValueError("Expected a non-empty schema 2 dataset export.")
+    if schema == 2 and (
+        manifest.get("purpose") != "shot_type" or manifest.get("evidence_schema_version") != 1
+    ):
+        raise ValueError("Expected shot_type purpose and evidence schema 1; reverify and re-export.")
     entries = manifest["entries"]
     known_shots = set(SHOT_TYPES)
     database = Path(data) / "qc.db"
+    live = None
     if database.is_file():
         with sqlite3.connect(database) as connection:
             version = connection.execute("PRAGMA user_version").fetchone()[0]
             if version >= 2:
                 known_shots.update(row[0] for row in connection.execute("SELECT key FROM shot_types"))
+            if schema == 2:
+                registered = connection.execute(
+                    "SELECT manifest_key, sha256 FROM training_datasets WHERE id=?", (manifest.get("id"),)
+                ).fetchone()
+                if not registered:
+                    raise ValueError("This dataset is not registered in the selected app database.")
+                snapshot = resolved_file(data, registered[0]).read_bytes()
+                if hashlib.sha256(snapshot).hexdigest() != registered[1]:
+                    raise ValueError("Registered manifest integrity check failed.")
+                if json.loads(snapshot) != manifest:
+                    raise ValueError("The supplied manifest differs from the registered snapshot.")
                 if respect_trash:
-                    removed = {
-                        row[0]
-                        for row in connection.execute("""
-                        SELECT p.id FROM photos p JOIN vehicle_shoots s ON s.id=p.shoot_id
-                        LEFT JOIN training_examples t ON t.photo_id=p.id
-                        WHERE p.deleted_at IS NOT NULL OR s.deleted_at IS NOT NULL
-                        OR s.training_deleted_at IS NOT NULL OR t.deleted_at IS NOT NULL OR t.eligible = 0
+                    if version < 4:
+                        raise ValueError("Upgrade the app and reverify labels before training.")
+                    live = {
+                        r[0]: r
+                        for r in connection.execute("""
+                        SELECT t.id, t.labels, t.label_evidence, t.eligible, t.deleted_at,
+                               p.deleted_at, s.deleted_at, s.training_deleted_at, p.id
+                        FROM training_examples t JOIN photos p ON p.id=t.photo_id
+                        JOIN vehicle_shoots s ON s.id=p.shoot_id
                     """)
                     }
-                    entries = [e for e in entries if e["photo_id"] not in removed]
-                    if not entries:
-                        raise ValueError(
-                            "No approved photos remain in this snapshot. Restore items from Trash and review approval, or export a new dataset."
-                        )
+            elif respect_trash and version >= 2:
+                removed = {
+                    row[0]
+                    for row in connection.execute("""
+                    SELECT p.id FROM photos p JOIN vehicle_shoots s ON s.id=p.shoot_id
+                    LEFT JOIN training_examples t ON t.photo_id=p.id
+                    WHERE p.deleted_at IS NOT NULL OR s.deleted_at IS NOT NULL
+                    OR s.training_deleted_at IS NOT NULL OR t.deleted_at IS NOT NULL OR t.eligible = 0
+                """)
+                }
+                entries = [e for e in entries if e["photo_id"] not in removed]
+    elif schema == 2:
+        raise ValueError("Schema 2 requires the app database to validate the registered snapshot.")
     memberships, duplicate_labels = {}, {}
     for entry in entries:
+        if schema == 2:
+            item = entry.get("label_evidence", {}).get("shot_type")
+            if (
+                not is_verified(item, entry.get("labels", {}).get("shot_type"))
+                or not entry.get("approval_snapshot")
+                or not entry.get("training_example_id")
+                or item["value_revision"] > entry.get("label_revision", -1)
+            ):
+                raise ValueError("Unverified snapshot evidence. Reverify labels and re-export.")
         if entry["split"] not in ("train", "validation", "test"):
             raise ValueError("Unknown dataset split")
         shot = entry["labels"].get("shot_type")
@@ -55,6 +96,25 @@ def read_manifest(path, data, respect_trash=True):
         path = resolved_file(data, entry["image_key"])
         if hashlib.sha256(path.read_bytes()).hexdigest() != entry["sha256"]:
             raise ValueError(f"Original image integrity check failed: {entry['photo_id']}")
+    if live is not None:
+        valid = []
+        for entry in entries:
+            current = live.get(entry["training_example_id"])
+            if not current or not current[3] or any(current[4:8]) or current[8] != entry["photo_id"]:
+                continue
+            labels, evidence = json.loads(current[1]), json.loads(current[2])
+            shot = labels.get("shot_type")
+            if (
+                shot == entry["labels"]["shot_type"]
+                and is_verified(evidence.get("shot_type"), shot)
+                and evidence.get("shot_type") == entry["label_evidence"]["shot_type"]
+            ):
+                valid.append(entry)
+        entries = valid
+    if not entries:
+        raise ValueError(
+            "No approved photos with current verified evidence remain. Reverify and export a new dataset."
+        )
     # Identical bytes contribute only once; their group membership is already checked.
     unique = {e["sha256"]: e for e in entries}
     return manifest, list(unique.values())
