@@ -72,7 +72,7 @@ export function TrainingProgress({
     >
       <h3>Training collection guide</h3>
       <p>
-        {data.unique_labeled} unique approved, shot-labeled photos ·{" "}
+        {data.unique_labeled} unique approved photos with verified shot labels ·{" "}
         {data.unassigned} approved photos still need a shot type.
       </p>
       <p>
@@ -109,7 +109,7 @@ export function TrainingProgress({
             <summary>Problem examples for future quality models</summary>
             <p className="form-note">
               The current ML model learns shot types, not quality defects. These
-              human-labeled examples build a future collection; technical checks
+              verified human-labeled examples build a future collection; technical checks
               currently use fixed measurements.
             </p>
             {data.quality.map((q) => (

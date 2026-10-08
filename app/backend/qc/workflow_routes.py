@@ -57,7 +57,7 @@ def register_workflow_routes(app, factory, policy_for, required):
                     raise HTTPException(409, "A selected photo's labels changed. Reload before pasting.")
                 example = training_example(session, photo)
                 # Normal and training shot types stay independent of copied quality labels.
-                change_labels(session, example, {**example.labels, **patch}, body.actor, eligible=False)
+                change_labels(session, example, {**example.labels, **patch}, body.actor, eligible=False, invalidate=QUALITY_KEYS)
             session.commit()
             return {"updated": len(ids), "approval": "Review pasted labels and approve before training."}
 

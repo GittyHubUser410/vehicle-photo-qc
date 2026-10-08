@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 from datetime import date
 
-from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
@@ -11,6 +11,15 @@ from sqlalchemy import String, cast, func, inspect, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from .security import configure_security
 
+from .evidence import (
+    actor_for,
+    evidence,
+    suggested_labels,
+    training_response,
+    run_envelope,
+    resolve_shot,
+    exclusion_reasons,
+)
 from .analysis import Worker
 from .banner import banner_region, banner_overlap
 from .catalog import good_labels
@@ -29,7 +38,7 @@ from .db import (
     Dealer,
     Group,
     Issue,
-    LabelRevision,
+    PhotoShotRevision,
     Measurement,
     ModelVersion,
     Photo,
@@ -46,6 +55,10 @@ from .db import (
 )
 from .media import MAX_BATCH_BYTES, prepare_image, resolved_file
 from .schemas import (
+    TrainingResponse,
+    PhotoResponse,
+    ShootDetailResponse,
+    ShootListResponse,
     DEFAULT_RULES,
     DealerInput,
     GroupInput,
@@ -290,6 +303,7 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
                         position=position,
                         original_filename=filename,
                         shot_type=sequence[position - 1],
+                        shot_evidence=evidence(sequence[position - 1], 0, "import_sequence"),
                         **details,
                     )
                     session.add(photo)
@@ -300,6 +314,9 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
                                 photo_id=photo.id,
                                 origin=values["source"] or "dedicated_upload",
                                 labels=good_labels(photo.shot_type),
+                                label_evidence=suggested_labels(
+                                    good_labels(photo.shot_type), source="import"
+                                ),
                                 eligible=True,
                             )
                         )
@@ -336,6 +353,7 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
         photos = session.scalars(
             select(Photo).where(Photo.shoot_id == shoot.id).order_by(Photo.position)
         ).all()
+        evidence_photos = photos
         if training_only:
             active_ids = set(session.scalars(select(TrainingExample.photo_id)))
             photos = [p for p in photos if p.id in active_ids]
@@ -353,6 +371,7 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
             else 0
         )
         return serialize(shoot) | {
+            "qc_evidence": run_envelope(session, shoot, evidence_photos),
             "dealership_name": dealer.name if dealer else (shoot.source or "General QC"),
             "photographer_name": photographer.name if photographer else "Not specified",
             "photo_count": len(photos),
@@ -369,7 +388,7 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
             ),
         }
 
-    @app.get("/api/shoots")
+    @app.get("/api/shoots", response_model=ShootListResponse)
     def list_shoots(
         q: str = "",
         dealership_id: str = "",
@@ -456,7 +475,7 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
             shoots = session.scalars(stmt.order_by(ordering, Shoot.id).offset(offset).limit(limit)).all()
             return {"items": [summary(session, s, purpose == "training") for s in shoots], "total": total}
 
-    @app.get("/api/shoots/{shoot_id}")
+    @app.get("/api/shoots/{shoot_id}", response_model=ShootDetailResponse)
     def shoot_detail(shoot_id: str):
         with factory() as session:
             shoot = required(session, Shoot, shoot_id)
@@ -480,13 +499,16 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
                     | {
                         "display_filename": display_filename(session, shoot, photo),
                         "analysis": measurements.get(photo.id),
-                        "training": serialize(training)
+                        "training": training_response(training, photo, shoot)
                         if training and not shoot.training_deleted_at
                         else None,
                     }
                 )
             for rank, photo in enumerate(photos, 1):
-                region = banner_region(shoot.policy["rules"], rank, photo["shot_type"])
+                stored = session.get(Photo, photo["id"])
+                metric = photo.get("analysis") or {}
+                resolved, _, _ = resolve_shot(stored, metric.get("predicted_shot"), metric.get("confidence"))
+                region = banner_region(shoot.policy["rules"], rank, resolved)
                 photo["banner"] = {**region, "check": banner_overlap(region)}
             return summary(session, shoot) | {
                 "photos": photos,
@@ -558,26 +580,53 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
                 headers={"Cache-Control": "private, max-age=86400"},
             )
 
-    @app.put("/api/photos/{photo_id}/shot")
-    def set_shot(photo_id: str, body: ShotInput):
+    @app.put("/api/photos/{photo_id}/shot", response_model=PhotoResponse)
+    def set_shot(photo_id: str, body: ShotInput, request: Request):
         with factory() as session:
+            session.connection().exec_driver_sql("BEGIN IMMEDIATE")
             photo = required(session, Photo, photo_id)
             shoot = required(session, Shoot, photo.shoot_id)
             if shoot.status in ("queued", "processing"):
                 raise HTTPException(409, "Wait for analysis to finish before changing shot types.")
             validate_shots(session, [body.shot_type])
+            if (body.verify and body.revision is None) or (
+                body.revision is not None and body.revision != photo.shot_revision
+            ):
+                raise HTTPException(409, "Shot evidence changed. Reload and confirm the current revision.")
             if photo.shot_type != body.shot_type:
                 example = session.scalar(select(TrainingExample).where(TrainingExample.photo_id == photo.id))
                 if example and not shoot.training_deleted_at:
-                    change_labels(session, example, {**example.labels, "shot_type": body.shot_type})
+                    change_labels(
+                        session,
+                        example,
+                        {**example.labels, "shot_type": body.shot_type},
+                        invalidate=["shot_type"],
+                        invalidate_source="operational_shot_sync",
+                    )
             photo.shot_type = body.shot_type
+            photo.shot_revision += 1
+            photo.shot_evidence = evidence(
+                body.shot_type,
+                photo.shot_revision,
+                "explicit_confirmation" if body.verify else "edit",
+                "verified" if body.verify else "suggested",
+                actor_for(request, body.actor),
+            )
+            session.add(
+                PhotoShotRevision(
+                    photo_id=photo.id,
+                    revision=photo.shot_revision,
+                    shot_type=photo.shot_type,
+                    shot_evidence=photo.shot_evidence,
+                )
+            )
             shoot.checks = {**shoot.checks, "required_shots": "needs_reanalysis"}
             session.flush()
             remember_sequence(session, shoot, policy_for(session, shoot.dealership_id, shoot.inventory_type))
             session.commit()
             return serialize(photo)
 
-    @app.post("/api/photos/{photo_id}/training")
+    @app.post("/api/photos/{photo_id}/training", response_model=TrainingResponse)
     def promote(photo_id: str):
         with factory() as session:
             photo = required(session, Photo, photo_id)
@@ -586,43 +635,34 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
                 raise HTTPException(409, "This vehicle's training membership is in Trash. Restore it first.")
             example = training_example(session, photo)
             session.commit()
-            return serialize(example)
+            return training_response(example, photo, shoot)
 
-    @app.put("/api/photos/{photo_id}/training")
-    def save_labels(photo_id: str, body: LabelInput):
+    @app.put("/api/photos/{photo_id}/training", response_model=TrainingResponse)
+    def save_labels(photo_id: str, body: LabelInput, request: Request):
         with factory() as session:
+            session.connection().exec_driver_sql("BEGIN IMMEDIATE")
             photo = required(session, Photo, photo_id)
-            if required(session, Shoot, photo.shoot_id).training_deleted_at:
+            shoot = required(session, Shoot, photo.shoot_id)
+            if shoot.training_deleted_at:
                 raise HTTPException(409, "This training vehicle is in Trash.")
             validate_shots(session, [body.labels.shot_type])
             example = session.scalar(select(TrainingExample).where(TrainingExample.photo_id == photo_id))
             if not example:
                 raise HTTPException(404, "Add this photo to Training first.")
-            result = session.execute(
-                update(TrainingExample)
-                .where(TrainingExample.id == example.id, TrainingExample.revision == body.revision)
-                .values(
-                    labels=body.labels.model_dump(),
-                    eligible=body.eligible,
-                    revision=body.revision + 1,
-                    updated_at=now(),
-                    labeled_by=body.actor,
-                )
-            )
-            if not result.rowcount:
+            if example.revision != body.revision:
                 raise HTTPException(409, "This label was edited elsewhere. Reload before saving.")
-            session.add(
-                LabelRevision(
-                    example_id=example.id,
-                    revision=body.revision + 1,
-                    labels=body.labels.model_dump(),
-                    eligible=body.eligible,
-                    actor=body.actor,
-                )
+            identity = actor_for(request, body.actor)
+            change_labels(
+                session,
+                example,
+                body.labels.model_dump(),
+                identity["actor_display"],
+                body.eligible,
+                verify_fields=body.verify_fields,
+                identity=identity,
             )
             session.commit()
-            session.refresh(example)
-            return serialize(example)
+            return training_response(example, photo, shoot)
 
     @app.get("/api/reviews")
     def list_reviews(
@@ -777,6 +817,15 @@ def create_app(data_dir=None, start_worker=True, seed_data=True):
                     .join(Photo, TrainingExample.photo_id == Photo.id)
                     .join(Shoot, Photo.shoot_id == Shoot.id)
                     .where(TrainingExample.eligible.is_(True), Shoot.training_deleted_at.is_(None))
+                ),
+                "exportable_count": sum(
+                    not exclusion_reasons(t, p, sh)
+                    for t, p, sh in session.execute(
+                        select(TrainingExample, Photo, Shoot)
+                        .join(Photo, TrainingExample.photo_id == Photo.id)
+                        .join(Shoot, Photo.shoot_id == Shoot.id)
+                        .where(Shoot.training_deleted_at.is_(None))
+                    )
                 ),
                 "recent_photos": [
                     {"id": p.id, "shoot_id": s.id, "stock": s.stock_number, "position": p.position}

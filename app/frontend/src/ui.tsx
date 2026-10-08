@@ -7,7 +7,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { label, thumbnail, vehicleName } from "./api";
-import type { Shoot, OpenDetail } from "./types";
+import type { Shoot, OpenDetail, Evidence } from "./types";
 
 export function Empty({
   title,
@@ -172,8 +172,27 @@ export function VehicleCard({
       <div className="vehicle-end">
         <Score value={shoot.score} />
         <small>Technical</small>
+        <small>
+          QC {label(shoot.qc_evidence.coverage)} ·{" "}
+          {label(shoot.qc_evidence.freshness)}
+        </small>
       </div>
       <ArrowUpRight className="card-arrow" size={18} />
     </button>
+  );
+}
+
+export function EvidenceBadge({ evidence }: { evidence?: Evidence }) {
+  const state = evidence?.state || "legacy_unverified";
+  return (
+    <span
+      title={
+        evidence?.state === "verified"
+          ? `${evidence.actor_display} (${label(evidence.actor_basis)}) · ${evidence.recorded_at}`
+          : "A stored value is separate from human verification."
+      }
+    >
+      <Badge tone={state === "verified" ? "" : "warn"}>{label(state)}</Badge>
+    </span>
   );
 }

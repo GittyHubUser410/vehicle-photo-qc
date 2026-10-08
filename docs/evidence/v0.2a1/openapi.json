@@ -1,0 +1,3278 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Vehicle Photo QC",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_api_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/config": {
+      "get": {
+        "summary": "Config",
+        "operationId": "config_api_config_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/groups": {
+      "post": {
+        "summary": "Add Group",
+        "operationId": "add_group_api_groups_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroupInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/groups/{item_id}": {
+      "put": {
+        "summary": "Edit Group",
+        "operationId": "edit_group_api_groups__item_id__put",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroupInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dealerships": {
+      "post": {
+        "summary": "Add Dealer",
+        "operationId": "add_dealer_api_dealerships_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DealerInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dealerships/{item_id}": {
+      "put": {
+        "summary": "Edit Dealer",
+        "operationId": "edit_dealer_api_dealerships__item_id__put",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DealerInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/photographers": {
+      "post": {
+        "summary": "Add Photographer",
+        "operationId": "add_photographer_api_photographers_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NameInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/photographers/{item_id}": {
+      "put": {
+        "summary": "Edit Photographer",
+        "operationId": "edit_photographer_api_photographers__item_id__put",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NameInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/shoots": {
+      "post": {
+        "summary": "Import Shoot",
+        "operationId": "import_shoot_api_shoots_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_import_shoot_api_shoots_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List Shoots",
+        "operationId": "list_shoots_api_shoots_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Q"
+            }
+          },
+          {
+            "name": "dealership_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Dealership Id"
+            }
+          },
+          {
+            "name": "photographer_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Photographer Id"
+            }
+          },
+          {
+            "name": "inventory_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Inventory Type"
+            }
+          },
+          {
+            "name": "purpose",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "evaluation",
+              "title": "Purpose"
+            }
+          },
+          {
+            "name": "previously_queued",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Previously Queued"
+            }
+          },
+          {
+            "name": "issue",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Issue"
+            }
+          },
+          {
+            "name": "shot_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Shot Type"
+            }
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Date From"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Date To"
+            }
+          },
+          {
+            "name": "season",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Season"
+            }
+          },
+          {
+            "name": "lighting",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Lighting"
+            }
+          },
+          {
+            "name": "color",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Color"
+            }
+          },
+          {
+            "name": "max_score",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "maximum": 100,
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Max Score"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Status"
+            }
+          },
+          {
+            "name": "eligible",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Eligible"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "newest",
+              "title": "Sort"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 30,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShootListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/uploads": {
+      "post": {
+        "summary": "Start",
+        "operationId": "start_api_uploads_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartBatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/uploads/{batch_id}": {
+      "get": {
+        "summary": "Status",
+        "operationId": "status_api_uploads__batch_id__get",
+        "parameters": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Batch Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Cancel",
+        "operationId": "cancel_api_uploads__batch_id__delete",
+        "parameters": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Batch Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/uploads/{batch_id}/photos/{position}": {
+      "put": {
+        "summary": "Photo",
+        "operationId": "photo_api_uploads__batch_id__photos__position__put",
+        "parameters": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Batch Id"
+            }
+          },
+          {
+            "name": "position",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Position"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_photo_api_uploads__batch_id__photos__position__put"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/uploads/{batch_id}/complete": {
+      "post": {
+        "summary": "Complete",
+        "operationId": "complete_api_uploads__batch_id__complete_post",
+        "parameters": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Batch Id"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/shoots/{shoot_id}": {
+      "get": {
+        "summary": "Shoot Detail",
+        "operationId": "shoot_detail_api_shoots__shoot_id__get",
+        "parameters": [
+          {
+            "name": "shoot_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Shoot Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShootDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Edit Vehicle",
+        "operationId": "edit_vehicle_api_shoots__shoot_id__put",
+        "parameters": [
+          {
+            "name": "shoot_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Shoot Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VehicleEditInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/shoots/{shoot_id}/reanalyze": {
+      "post": {
+        "summary": "Reanalyze",
+        "operationId": "reanalyze_api_shoots__shoot_id__reanalyze_post",
+        "parameters": [
+          {
+            "name": "shoot_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Shoot Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/shot-types/order": {
+      "put": {
+        "summary": "Order Shots",
+        "operationId": "order_shots_api_shot_types_order_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShotOrderInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/shot-types/{key}": {
+      "patch": {
+        "summary": "Edit Shot",
+        "operationId": "edit_shot_api_shot_types__key__patch",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShotEditInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/shoots/{shoot_id}/training-membership": {
+      "put": {
+        "summary": "Membership",
+        "operationId": "membership_api_shoots__shoot_id__training_membership_put",
+        "parameters": [
+          {
+            "name": "shoot_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Shoot Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrainingMembershipInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/training/readiness": {
+      "get": {
+        "summary": "Readiness",
+        "operationId": "readiness_api_training_readiness_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/photos/{photo_id}/{variant}": {
+      "get": {
+        "summary": "Photo File",
+        "operationId": "photo_file_api_photos__photo_id___variant__get",
+        "parameters": [
+          {
+            "name": "photo_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Photo Id"
+            }
+          },
+          {
+            "name": "variant",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Variant"
+            }
+          },
+          {
+            "name": "download",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Download"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/photos/{photo_id}/shot": {
+      "put": {
+        "summary": "Set Shot",
+        "operationId": "set_shot_api_photos__photo_id__shot_put",
+        "parameters": [
+          {
+            "name": "photo_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Photo Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShotInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/photos/{photo_id}/training": {
+      "post": {
+        "summary": "Promote",
+        "operationId": "promote_api_photos__photo_id__training_post",
+        "parameters": [
+          {
+            "name": "photo_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Photo Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainingResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Save Labels",
+        "operationId": "save_labels_api_photos__photo_id__training_put",
+        "parameters": [
+          {
+            "name": "photo_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Photo Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LabelInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainingResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reviews": {
+      "get": {
+        "summary": "List Reviews",
+        "operationId": "list_reviews_api_reviews_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Q"
+            }
+          },
+          {
+            "name": "severity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Severity"
+            }
+          },
+          {
+            "name": "viewed",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Viewed"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "open",
+              "title": "State"
+            }
+          },
+          {
+            "name": "dealership_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Dealership Id"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "priority",
+              "title": "Sort"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 30,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reviews/{review_id}": {
+      "patch": {
+        "summary": "Review Action",
+        "operationId": "review_action_api_reviews__review_id__patch",
+        "parameters": [
+          {
+            "name": "review_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Review Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dashboard": {
+      "get": {
+        "summary": "Dashboard",
+        "operationId": "dashboard_api_dashboard_get",
+        "parameters": [
+          {
+            "name": "today",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Today"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/datasets": {
+      "post": {
+        "summary": "Create Dataset",
+        "operationId": "create_dataset_api_datasets_post",
+        "parameters": [
+          {
+            "name": "seed",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 42,
+              "title": "Seed"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/datasets/{item_id}": {
+      "get": {
+        "summary": "Get Dataset",
+        "operationId": "get_dataset_api_datasets__item_id__get",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/models": {
+      "get": {
+        "summary": "Models",
+        "operationId": "models_api_models_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/models/{item_id}/activate": {
+      "post": {
+        "summary": "Activate Model",
+        "operationId": "activate_model_api_models__item_id__activate_post",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/models/deactivate": {
+      "post": {
+        "summary": "Deactivate Models",
+        "operationId": "deactivate_models_api_models_deactivate_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sequence": {
+      "get": {
+        "summary": "Sequence",
+        "operationId": "sequence_api_sequence_get",
+        "parameters": [
+          {
+            "name": "dealership_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Dealership Id"
+            }
+          },
+          {
+            "name": "inventory_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "used",
+              "title": "Inventory Type"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/shot-types": {
+      "post": {
+        "summary": "Add Shot Type",
+        "operationId": "add_shot_type_api_shot_types_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NameInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/training/paste": {
+      "post": {
+        "summary": "Paste",
+        "operationId": "paste_api_training_paste_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasteInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/shoots/{shoot_id}/trash": {
+      "post": {
+        "summary": "Trash Shoot",
+        "operationId": "trash_shoot_api_shoots__shoot_id__trash_post",
+        "parameters": [
+          {
+            "name": "shoot_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Shoot Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrashInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/photos/{photo_id}/trash": {
+      "post": {
+        "summary": "Trash Photo",
+        "operationId": "trash_photo_api_photos__photo_id__trash_post",
+        "parameters": [
+          {
+            "name": "photo_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Photo Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrashInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/trash": {
+      "get": {
+        "summary": "Trash List",
+        "operationId": "trash_list_api_trash_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/trash/{kind}/{item_id}/restore": {
+      "post": {
+        "summary": "Restore",
+        "operationId": "restore_api_trash__kind___item_id__restore_post",
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Kind"
+            }
+          },
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrashInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Body_import_shoot_api_shoots_post": {
+        "properties": {
+          "metadata": {
+            "type": "string",
+            "title": "Metadata"
+          },
+          "files": {
+            "items": {
+              "type": "string",
+              "contentMediaType": "application/octet-stream"
+            },
+            "type": "array",
+            "title": "Files"
+          }
+        },
+        "type": "object",
+        "required": [
+          "metadata",
+          "files"
+        ],
+        "title": "Body_import_shoot_api_shoots_post"
+      },
+      "Body_photo_api_uploads__batch_id__photos__position__put": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_photo_api_uploads__batch_id__photos__position__put"
+      },
+      "CheckResponse": {
+        "properties": {
+          "check_id": {
+            "type": "string",
+            "title": "Check Id"
+          },
+          "applicability": {
+            "type": "string",
+            "enum": [
+              "applicable",
+              "not_applicable",
+              "unknown"
+            ],
+            "title": "Applicability"
+          },
+          "execution": {
+            "type": "string",
+            "enum": [
+              "completed",
+              "not_run",
+              "unavailable",
+              "error"
+            ],
+            "title": "Execution"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "pass",
+              "concern",
+              "unknown"
+            ],
+            "title": "Outcome"
+          },
+          "reason_code": {
+            "type": "string",
+            "title": "Reason Code"
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "photo",
+              "shoot"
+            ],
+            "title": "Scope"
+          },
+          "photo_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Photo Id"
+          },
+          "input_provenance": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Input Provenance"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "rule_version": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Rule Version"
+          },
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "pipeline_version": {
+            "type": "string",
+            "title": "Pipeline Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "check_id",
+          "applicability",
+          "execution",
+          "outcome",
+          "reason_code",
+          "scope",
+          "photo_id",
+          "input_provenance",
+          "run_id",
+          "rule_version",
+          "model_id",
+          "pipeline_version"
+        ],
+        "title": "CheckResponse"
+      },
+      "DealerInput": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
+          },
+          "new_rules": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "New Rules"
+          },
+          "used_rules": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Used Rules"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "DealerInput"
+      },
+      "DetailPhotoResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "shot_type": {
+            "type": "string",
+            "title": "Shot Type"
+          },
+          "shot_revision": {
+            "type": "integer",
+            "title": "Shot Revision"
+          },
+          "shot_evidence": {
+            "$ref": "#/components/schemas/EvidenceResponse"
+          },
+          "training": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "analysis": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Analysis"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "id",
+          "shot_type",
+          "shot_revision",
+          "shot_evidence",
+          "training",
+          "analysis"
+        ],
+        "title": "DetailPhotoResponse"
+      },
+      "EvidenceResponse": {
+        "properties": {
+          "evidence_schema_version": {
+            "type": "integer",
+            "const": 1,
+            "title": "Evidence Schema Version"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "suggested",
+              "verified",
+              "legacy_unverified"
+            ],
+            "title": "State"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "value_revision": {
+            "type": "integer",
+            "title": "Value Revision"
+          },
+          "recorded_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recorded At"
+          },
+          "actor_id": {
+            "type": "string",
+            "title": "Actor Id"
+          },
+          "actor_display": {
+            "type": "string",
+            "title": "Actor Display"
+          },
+          "actor_basis": {
+            "type": "string",
+            "enum": [
+              "authenticated",
+              "local_declared",
+              "system"
+            ],
+            "title": "Actor Basis"
+          },
+          "source_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Ref"
+          }
+        },
+        "type": "object",
+        "required": [
+          "evidence_schema_version",
+          "state",
+          "source",
+          "value",
+          "value_revision",
+          "recorded_at",
+          "actor_id",
+          "actor_display",
+          "actor_basis"
+        ],
+        "title": "EvidenceResponse"
+      },
+      "GroupInput": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "rules": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Rules"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "GroupInput"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "ImportInput": {
+        "properties": {
+          "dealership_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dealership Id"
+          },
+          "photographer_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Photographer Id"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "dealership",
+              "general"
+            ],
+            "title": "Mode",
+            "default": "dealership"
+          },
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "evaluation",
+              "training"
+            ],
+            "title": "Purpose",
+            "default": "evaluation"
+          },
+          "source": {
+            "type": "string",
+            "maxLength": 150,
+            "title": "Source",
+            "default": ""
+          },
+          "stock_number": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Stock Number",
+            "default": ""
+          },
+          "inventory_type": {
+            "type": "string",
+            "enum": [
+              "new",
+              "used"
+            ],
+            "title": "Inventory Type",
+            "default": "used"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 2100.0,
+                "minimum": 1900.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          },
+          "make": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Make",
+            "default": ""
+          },
+          "model": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Model",
+            "default": ""
+          },
+          "trim": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Trim",
+            "default": ""
+          },
+          "color": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Color",
+            "default": ""
+          },
+          "shoot_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Shoot Date"
+          },
+          "season": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "spring",
+                  "summer",
+                  "autumn",
+                  "winter"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Season"
+          },
+          "lighting": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "sunny",
+              "cloudy",
+              "shade",
+              "indoor",
+              "mixed"
+            ],
+            "title": "Lighting",
+            "default": "unknown"
+          },
+          "ground": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "dry",
+              "wet",
+              "snow"
+            ],
+            "title": "Ground",
+            "default": "unknown"
+          },
+          "location": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "outdoor_lot",
+              "staging_area",
+              "photo_booth",
+              "indoor_bay",
+              "other"
+            ],
+            "title": "Location",
+            "default": "unknown"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Note",
+            "default": ""
+          },
+          "shot_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array",
+                "maxItems": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shot Types"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "shoot_date"
+        ],
+        "title": "ImportInput"
+      },
+      "LabelInput": {
+        "properties": {
+          "labels": {
+            "$ref": "#/components/schemas/Labels"
+          },
+          "verify_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Verify Fields"
+          },
+          "eligible": {
+            "type": "boolean",
+            "title": "Eligible",
+            "default": false
+          },
+          "actor": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 1,
+            "title": "Actor",
+            "default": "Local reviewer"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "labels",
+          "revision"
+        ],
+        "title": "LabelInput"
+      },
+      "Labels": {
+        "properties": {
+          "shot_type": {
+            "type": "string",
+            "title": "Shot Type",
+            "default": "unknown"
+          },
+          "angle": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "good",
+              "too_front",
+              "too_rear",
+              "other_bad"
+            ],
+            "title": "Angle",
+            "default": "unknown"
+          },
+          "blur": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "good",
+              "bad"
+            ],
+            "title": "Blur",
+            "default": "unknown"
+          },
+          "crop": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "good",
+              "bad"
+            ],
+            "title": "Crop",
+            "default": "unknown"
+          },
+          "exposure": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "good",
+              "bad"
+            ],
+            "title": "Exposure",
+            "default": "unknown"
+          },
+          "saturation": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "good",
+              "bad"
+            ],
+            "title": "Saturation",
+            "default": "unknown"
+          },
+          "framing": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "good",
+              "bad"
+            ],
+            "title": "Framing",
+            "default": "unknown"
+          },
+          "overall": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "good",
+              "borderline",
+              "bad"
+            ],
+            "title": "Overall",
+            "default": "unknown"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Note",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "Labels"
+      },
+      "NameInput": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 1,
+            "title": "Name"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "NameInput"
+      },
+      "PasteInput": {
+        "properties": {
+          "targets": {
+            "items": {
+              "$ref": "#/components/schemas/PasteTarget"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Targets"
+          },
+          "labels": {
+            "$ref": "#/components/schemas/Labels"
+          },
+          "actor": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 1,
+            "title": "Actor",
+            "default": "Local reviewer"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "targets",
+          "labels"
+        ],
+        "title": "PasteInput"
+      },
+      "PasteTarget": {
+        "properties": {
+          "photo_id": {
+            "type": "string",
+            "title": "Photo Id"
+          },
+          "revision": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "photo_id"
+        ],
+        "title": "PasteTarget"
+      },
+      "PhotoResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "shot_type": {
+            "type": "string",
+            "title": "Shot Type"
+          },
+          "shot_revision": {
+            "type": "integer",
+            "title": "Shot Revision"
+          },
+          "shot_evidence": {
+            "$ref": "#/components/schemas/EvidenceResponse"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "id",
+          "shot_type",
+          "shot_revision",
+          "shot_evidence"
+        ],
+        "title": "PhotoResponse"
+      },
+      "QCResponse": {
+        "properties": {
+          "evidence_schema_version": {
+            "type": "integer",
+            "enum": [
+              0,
+              1
+            ],
+            "title": "Evidence Schema Version"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "score_scope": {
+            "type": "string",
+            "const": "technical_baseline",
+            "title": "Score Scope"
+          },
+          "coverage": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "incomplete",
+              "complete"
+            ],
+            "title": "Coverage"
+          },
+          "freshness": {
+            "type": "string",
+            "enum": [
+              "historical_unknown",
+              "stale",
+              "current"
+            ],
+            "title": "Freshness"
+          },
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/CheckResponse"
+            },
+            "type": "array",
+            "title": "Checks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "evidence_schema_version",
+          "run_id",
+          "score_scope",
+          "coverage",
+          "freshness",
+          "checks"
+        ],
+        "title": "QCResponse"
+      },
+      "ReviewInput": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "view",
+              "note",
+              "resolve",
+              "reopen"
+            ],
+            "title": "Action"
+          },
+          "actor": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 1,
+            "title": "Actor",
+            "default": "Local reviewer"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "resolution": {
+            "type": "string",
+            "enum": [
+              "accepted",
+              "reshoot_requested",
+              "false_positive",
+              "other"
+            ],
+            "title": "Resolution",
+            "default": "accepted"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "action"
+        ],
+        "title": "ReviewInput"
+      },
+      "RunResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "evidence_schema_version": {
+            "type": "integer",
+            "title": "Evidence Schema Version"
+          },
+          "check_results": {
+            "items": {
+              "$ref": "#/components/schemas/CheckResponse"
+            },
+            "type": "array",
+            "title": "Check Results"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "id",
+          "evidence_schema_version",
+          "check_results"
+        ],
+        "title": "RunResponse"
+      },
+      "ShootDetailResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "checks": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Checks"
+          },
+          "qc_evidence": {
+            "$ref": "#/components/schemas/QCResponse"
+          },
+          "photos": {
+            "items": {
+              "$ref": "#/components/schemas/DetailPhotoResponse"
+            },
+            "type": "array",
+            "title": "Photos"
+          },
+          "runs": {
+            "items": {
+              "$ref": "#/components/schemas/RunResponse"
+            },
+            "type": "array",
+            "title": "Runs"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "id",
+          "checks",
+          "qc_evidence",
+          "photos",
+          "runs"
+        ],
+        "title": "ShootDetailResponse"
+      },
+      "ShootListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ShootResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ShootListResponse"
+      },
+      "ShootResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "checks": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Checks"
+          },
+          "qc_evidence": {
+            "$ref": "#/components/schemas/QCResponse"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "id",
+          "checks",
+          "qc_evidence"
+        ],
+        "title": "ShootResponse"
+      },
+      "ShotEditInput": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 150,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "archived": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ShotEditInput"
+      },
+      "ShotInput": {
+        "properties": {
+          "shot_type": {
+            "type": "string",
+            "title": "Shot Type"
+          },
+          "verify": {
+            "type": "boolean",
+            "title": "Verify",
+            "default": false
+          },
+          "revision": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision"
+          },
+          "actor": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 1,
+            "title": "Actor",
+            "default": "Local reviewer"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "shot_type"
+        ],
+        "title": "ShotInput"
+      },
+      "ShotOrderInput": {
+        "properties": {
+          "keys": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 1000,
+            "minItems": 1,
+            "title": "Keys"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "keys"
+        ],
+        "title": "ShotOrderInput"
+      },
+      "StartBatch": {
+        "properties": {
+          "metadata": {
+            "$ref": "#/components/schemas/ImportInput"
+          },
+          "count": {
+            "type": "integer",
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "metadata",
+          "count"
+        ],
+        "title": "StartBatch"
+      },
+      "TrainingMembershipInput": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "photo_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array",
+                "maxItems": 200,
+                "minItems": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Photo Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "enabled"
+        ],
+        "title": "TrainingMembershipInput"
+      },
+      "TrainingResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "labels": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Labels"
+          },
+          "eligible": {
+            "type": "boolean",
+            "title": "Eligible"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "label_evidence": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/EvidenceResponse"
+            },
+            "type": "object",
+            "title": "Label Evidence"
+          },
+          "exportable": {
+            "type": "boolean",
+            "title": "Exportable"
+          },
+          "exclusion_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Exclusion Reasons"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "id",
+          "labels",
+          "eligible",
+          "revision",
+          "label_evidence",
+          "exportable",
+          "exclusion_reasons"
+        ],
+        "title": "TrainingResponse"
+      },
+      "TrashInput": {
+        "properties": {
+          "scope": {
+            "type": "string",
+            "enum": [
+              "all",
+              "training"
+            ],
+            "title": "Scope",
+            "default": "all"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "TrashInput"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "VehicleEditInput": {
+        "properties": {
+          "dealership_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dealership Id"
+          },
+          "photographer_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Photographer Id"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "dealership",
+              "general"
+            ],
+            "title": "Mode",
+            "default": "dealership"
+          },
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "evaluation",
+              "training"
+            ],
+            "title": "Purpose",
+            "default": "evaluation"
+          },
+          "source": {
+            "type": "string",
+            "maxLength": 150,
+            "title": "Source",
+            "default": ""
+          },
+          "stock_number": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Stock Number",
+            "default": ""
+          },
+          "inventory_type": {
+            "type": "string",
+            "enum": [
+              "new",
+              "used"
+            ],
+            "title": "Inventory Type",
+            "default": "used"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 2100.0,
+                "minimum": 1900.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          },
+          "make": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Make",
+            "default": ""
+          },
+          "model": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Model",
+            "default": ""
+          },
+          "trim": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Trim",
+            "default": ""
+          },
+          "color": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Color",
+            "default": ""
+          },
+          "shoot_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Shoot Date"
+          },
+          "season": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "spring",
+                  "summer",
+                  "autumn",
+                  "winter"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Season"
+          },
+          "lighting": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "sunny",
+              "cloudy",
+              "shade",
+              "indoor",
+              "mixed"
+            ],
+            "title": "Lighting",
+            "default": "unknown"
+          },
+          "ground": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "dry",
+              "wet",
+              "snow"
+            ],
+            "title": "Ground",
+            "default": "unknown"
+          },
+          "location": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "outdoor_lot",
+              "staging_area",
+              "photo_booth",
+              "indoor_bay",
+              "other"
+            ],
+            "title": "Location",
+            "default": "unknown"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Note",
+            "default": ""
+          },
+          "shot_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array",
+                "maxItems": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shot Types"
+          },
+          "metadata_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Metadata Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "shoot_date",
+          "metadata_revision"
+        ],
+        "title": "VehicleEditInput"
+      }
+    }
+  }
+}

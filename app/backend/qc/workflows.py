@@ -5,6 +5,7 @@ from fastapi import HTTPException
 from sqlalchemy import select
 
 from .catalog import DEFAULT_SEQUENCE, good_labels
+from .evidence import suggested_labels, system_actor, transition
 from .db import DealerSequence, LabelRevision, Photo, ShotType, TrainingExample, now
 
 
@@ -59,13 +60,38 @@ def remember_sequence(session, shoot, live_policy):
     )
 
 
-def change_labels(session, example, labels, actor="Local reviewer", eligible=False):
+def change_labels(
+    session,
+    example,
+    labels,
+    actor="Local reviewer",
+    eligible=False,
+    verify_fields=(),
+    invalidate=(),
+    identity=None,
+    invalidate_source="paste",
+):
+    example.label_evidence = transition(
+        example.labels,
+        example.label_evidence,
+        labels,
+        example.revision + 1,
+        identity or system_actor(actor),
+        verify_fields,
+        invalidate,
+        invalidate_source,
+    )
     example.labels, example.eligible = labels, eligible
     example.revision += 1
     example.updated_at, example.labeled_by = now(), actor
     session.add(
         LabelRevision(
-            example_id=example.id, revision=example.revision, labels=labels, eligible=eligible, actor=actor
+            example_id=example.id,
+            revision=example.revision,
+            labels=labels,
+            eligible=eligible,
+            actor=actor,
+            label_evidence=example.label_evidence,
         )
     )
 
@@ -80,7 +106,11 @@ def training_example(session, photo, origin="operational_photo"):
         raise HTTPException(409, "This training photo is in Trash. Restore it before editing.")
     if not example:
         example = TrainingExample(
-            photo_id=photo.id, origin=origin, labels=good_labels(photo.shot_type), eligible=True
+            photo_id=photo.id,
+            origin=origin,
+            labels=good_labels(photo.shot_type),
+            eligible=True,
+            label_evidence=suggested_labels(good_labels(photo.shot_type), source="membership"),
         )
         session.add(example)
         session.flush()

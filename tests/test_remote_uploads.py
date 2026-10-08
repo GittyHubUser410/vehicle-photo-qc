@@ -55,6 +55,9 @@ def test_staging_is_atomic_ordered_retryable_and_survives_restart(tmp_path):
         photos = c.get(f"/api/shoots/{sid}").json()["photos"]
         assert [p["shot_type"] for p in photos] == ["rear", "front"]
         assert all(p["training"]["eligible"] for p in photos)
+        assert all(not p["training"]["exportable"] for p in photos)
+        assert all(p["shot_evidence"]["state"] == "suggested" for p in photos)
+        assert all(p["training"]["label_evidence"]["shot_type"]["state"] == "suggested" for p in photos)
         assert c.get(f"/api/photos/{photos[0]['id']}/original").content == image_bytes()
         assert c.delete(url).status_code == 409
         # Recover a DB commit whose acknowledgement was not saved before interruption.

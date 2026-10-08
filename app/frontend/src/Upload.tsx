@@ -272,7 +272,7 @@ export function Upload({
           <p className="form-note">
             {mode === "general"
               ? training
-                ? "Training uploads start approved. You can uncheck approval for any photo. Choose a shot type before it can enter a dataset."
+                ? "Training uploads start approved. You can uncheck approval for any photo. Defaults remain suggestions; explicitly verify the reviewed shot label before it can enter a dataset."
                 : "Technical checks for any vehicle, without dealership photo-count or sequence rules."
               : "Choose the store and inventory type to apply its saved standards."}
           </p>

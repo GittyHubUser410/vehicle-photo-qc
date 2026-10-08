@@ -22,16 +22,16 @@ def test_manifest_rejects_leakage_changed_bytes_and_conflicting_labels(tmp_path)
     path = tmp_path / "dataset.json"
     path.write_text(json.dumps({"schema_version": 1, "entries": [one, two]}))
     with pytest.raises(ValueError, match="leakage"):
-        read_manifest(path, tmp_path)
+        read_manifest(path, tmp_path, inspect_legacy=True)
     two["split"] = "train"
     two["labels"] = {"shot_type": "rear"}
     path.write_text(json.dumps({"schema_version": 1, "entries": [one, two]}))
     with pytest.raises(ValueError, match="conflicting"):
-        read_manifest(path, tmp_path)
+        read_manifest(path, tmp_path, inspect_legacy=True)
     path.write_text(json.dumps({"schema_version": 1, "entries": [one]}))
     (tmp_path / "one.jpg").write_bytes(b"modified")
     with pytest.raises(ValueError, match="integrity"):
-        read_manifest(path, tmp_path)
+        read_manifest(path, tmp_path, inspect_legacy=True)
 
 
 def test_training_requires_independent_validation_class_coverage():

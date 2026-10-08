@@ -23,6 +23,7 @@ def main():
         dataset = session.get(Dataset, model.dataset_id)
         if not dataset:
             parser.error("The model's dataset is missing.")
+        # Frozen evidence still requires schema-2 verification and registered hash/content integrity.
         _, entries = read_manifest(resolved_file(data, dataset.manifest_key), data, respect_trash=False)
         test = [e for e in entries if e["split"] == "test"]
         if not test:

@@ -64,14 +64,15 @@ After A.1 passes, continue to **v0.2A.2 — Small-team production foundation**.
 ### A.1 Work review / next action
 
 Architecture/data-model review completed against planning commit
-`15cdbb8988433849aeedf1f3e261064888adef91`. **Ready for Codex implementation;
-not implemented, independently verified, or owner-accepted.**
+`15cdbb8988433849aeedf1f3e261064888adef91`. **Implemented on `milestone/v0.2a1-evidence`; pending independent Work verification and owner acceptance.**
 
 - Work review: `docs/architecture/V0.2A.1-REVIEW.md`.
 - Engineering decision: `docs/architecture/decisions/ADR-004-label-and-check-evidence.md`.
 - Bounded implementation handoff: `docs/handoffs/work-to-codex/V0.2A.1.md`.
 - Required evidence: `docs/V0.2A.1-ACCEPTANCE-TESTS.md`.
-- Next executor: Codex, new branch `milestone/v0.2a1-evidence` from current planning ref.
+- Implementation base: `e913a1e` on `docs/v0.2-planning`.
+- Codex report: `docs/handoffs/codex-to-work/V0.2A.1.md`.
+- Next executor: Work, independently verify the implementation PR against the bounded handoff.
 - No new owner decision blocks implementation under the locked Chat handoff.
 - Work independently verifies the resulting PR before the 15–30 minute owner acceptance session.
 

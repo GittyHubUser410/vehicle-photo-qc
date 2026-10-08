@@ -108,13 +108,26 @@ class Photo(Identity, Base):
     byte_size: Mapped[int] = mapped_column(Integer)
     exif: Mapped[dict] = mapped_column(JSON, default=dict)
     shot_type: Mapped[str] = mapped_column(String, default="unknown", index=True)
+    shot_revision: Mapped[int] = mapped_column(Integer, default=0)
+    shot_evidence: Mapped[dict] = mapped_column(JSON, default=dict)
     deleted_at: Mapped[str | None] = mapped_column(String)
     __table_args__ = (UniqueConstraint("shoot_id", "position"),)
+
+
+class PhotoShotRevision(Identity, Base):
+    __tablename__ = "photo_shot_revisions"
+    photo_id: Mapped[str] = mapped_column(ForeignKey("photos.id"), index=True)
+    revision: Mapped[int] = mapped_column(Integer)
+    shot_type: Mapped[str] = mapped_column(String)
+    shot_evidence: Mapped[dict] = mapped_column(JSON)
+    __table_args__ = (UniqueConstraint("photo_id", "revision"),)
 
 
 class Run(Identity, Base):
     __tablename__ = "analysis_runs"
     shoot_id: Mapped[str] = mapped_column(ForeignKey("vehicle_shoots.id"), index=True)
+    evidence_schema_version: Mapped[int] = mapped_column(Integer, default=0)
+    check_results: Mapped[list] = mapped_column(JSON, default=list)
     pipeline_version: Mapped[str] = mapped_column(String)
     model_version_id: Mapped[str | None] = mapped_column(ForeignKey("model_versions.id"))
     policy_snapshot: Mapped[dict] = mapped_column(JSON)
@@ -172,6 +185,7 @@ class TrainingExample(Identity, Base):
     photo_id: Mapped[str] = mapped_column(ForeignKey("photos.id"), unique=True)
     origin: Mapped[str] = mapped_column(String)
     labels: Mapped[dict] = mapped_column(JSON, default=dict)
+    label_evidence: Mapped[dict] = mapped_column(JSON, default=dict)
     eligible: Mapped[bool] = mapped_column(Boolean, default=False)
     labeled_by: Mapped[str] = mapped_column(String, default="")
     updated_at: Mapped[str] = mapped_column(String, default=now)
@@ -233,6 +247,7 @@ class LabelRevision(Identity, Base):
     example_id: Mapped[str] = mapped_column(ForeignKey("training_examples.id"), index=True)
     revision: Mapped[int] = mapped_column(Integer)
     labels: Mapped[dict] = mapped_column(JSON)
+    label_evidence: Mapped[dict] = mapped_column(JSON, default=dict)
     eligible: Mapped[bool] = mapped_column(Boolean)
     actor: Mapped[str] = mapped_column(String)
 
@@ -272,12 +287,18 @@ def initialize(data_dir: str | Path | None = None):
         connection.execute("PRAGMA journal_mode=WAL")
         connection.execute("PRAGMA busy_timeout=30000")
 
-    from .migrations import migrate
+    from .migrations import migrate, SCHEMA_VERSION
 
     migrate(engine, data)
-    Base.metadata.create_all(engine)
-    with engine.begin() as conn:
-        conn.exec_driver_sql("PRAGMA user_version=3")
+    with engine.connect() as conn:
+        conn.exec_driver_sql("BEGIN IMMEDIATE")
+        try:
+            Base.metadata.create_all(conn)
+            conn.exec_driver_sql(f"PRAGMA user_version={SCHEMA_VERSION}")
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
     factory = sessionmaker(engine, class_=ActiveSession, expire_on_commit=False)
     from .catalog import SHOT_CATALOG
 
