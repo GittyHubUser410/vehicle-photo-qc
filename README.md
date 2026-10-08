@@ -57,7 +57,7 @@ For a small trusted team using Android or other computers, see [Windows 11 remot
 3. Check the numbered photo tray. Drag to reorder or use the arrows; this explicit order is the order saved. JPEG, PNG, and WebP are supported, up to 200 photos per shoot, 25 MB each, and 1 GB per batch. Export HEIC/RAW files to JPEG first.
 4. Click **Evaluate photos**. Original bytes are copied unchanged, oriented thumbnails are generated, and a local background worker measures technical quality.
 5. Open **Vehicle Results** or **Review Queue**. Opening a queue item marks it viewed; **Resolve / remove from queue** closes it. The photo and review history remain saved. A reviewer name is an annotation, not an authenticated account.
-6. Use **Training Library → Upload training data** for dedicated examples. Choose Stage Now for outside sources, or **Add to Training Library** from an operational photo. New examples start approved with Good quality labels. Review the shot type and labels, and uncheck approval when needed. Uploaded photos do not automatically train anything.
+6. Use **Training Library → Upload training data** for dedicated examples. Choose Stage Now for outside sources, or **Add to Training Library** from an operational photo. New examples start approved with Good quality labels. Review the shot type and labels, explicitly verify selected fields before export, and uncheck approval when needed. Good defaults remain suggestions; approval and verification are separate. Uploaded photos do not automatically train anything.
 
 See [TRAINING.md](docs/TRAINING.md) for collection guidance, dataset exports, and the optional GPU training commands.
 

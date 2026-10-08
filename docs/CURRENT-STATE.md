@@ -72,6 +72,7 @@ Architecture/data-model review completed against planning commit
 - Required evidence: `docs/V0.2A.1-ACCEPTANCE-TESTS.md`.
 - Implementation base: `e913a1e` on `docs/v0.2-planning`.
 - Codex report: `docs/handoffs/codex-to-work/V0.2A.1.md`.
+- Implementation PR: https://github.com/GittyHubUser410/vehicle-photo-qc/pull/10 (open; do not merge/deploy under the Codex handoff).
 - Next executor: Work, independently verify the implementation PR against the bounded handoff.
 - No new owner decision blocks implementation under the locked Chat handoff.
 - Work independently verifies the resulting PR before the 15–30 minute owner acceptance session.
