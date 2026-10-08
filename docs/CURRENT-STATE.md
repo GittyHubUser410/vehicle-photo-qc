@@ -64,7 +64,7 @@ After A.1 passes, continue to **v0.2A.2 — Small-team production foundation**.
 ### A.1 Work review / next action
 
 Architecture/data-model review completed against planning commit
-`15cdbb8988433849aeedf1f3e261064888adef91`. **Implemented on `milestone/v0.2a1-evidence`; independent Work review of `d3a89ce` requests one bounded correction before owner acceptance.**
+`15cdbb8988433849aeedf1f3e261064888adef91`. **Implemented on `milestone/v0.2a1-evidence`; independent Work recheck of `d78dd5b` passed. R1 is closed; ready for owner acceptance, not yet accepted.**
 
 - Work review: `docs/architecture/V0.2A.1-REVIEW.md`.
 - Engineering decision: `docs/architecture/decisions/ADR-004-label-and-check-evidence.md`.
@@ -74,11 +74,12 @@ Architecture/data-model review completed against planning commit
 - Codex report: `docs/handoffs/codex-to-work/V0.2A.1.md`.
 - Implementation PR: https://github.com/GittyHubUser410/vehicle-photo-qc/pull/10 (open; do not merge/deploy under the Codex handoff).
 - Independent review/correction handoff: `docs/handoffs/work-to-codex/V0.2A.1-CORRECTIONS.md`.
-- Work verification: 60 backend tests, 9 browser tests, lint and production build passed; a targeted fixture reproduced incorrect classifier execution status for low-confidence inference (R1).
-- R1 correction: implemented on the existing PR branch; classifier execution/outcome now comes from inference independently of human operational resolution. See the updated Codex report for regression evidence.
-- Next executor: Work, independently recheck R1 and relevant regressions. Do not merge/deploy or begin A.2.
+- Work recheck: 68 backend tests and lint passed; the original independent reproduction confirms R1 fixed. Earlier independent browser/build checks passed; frontend and API shapes are unchanged by R1.
+- R1 correction `42c5488`: classifier execution/outcome now comes from inference independently of human operational resolution. Work closed R1; historical snapshots remain unchanged.
+- Independent verification and Human Test Packet: `docs/handoffs/work-to-chat/V0.2A.1-VERIFICATION.md`.
+- Next executor: Chat, coordinate the 15–30 minute owner acceptance session on the reviewed branch using disposable data. Do not merge/deploy or begin A.2 under this review.
 - No new owner decision blocks implementation under the locked Chat handoff.
-- Owner acceptance is not ready yet. Work must clear the correction before the 15–30 minute owner acceptance session.
+- Owner acceptance is ready to schedule but has not occurred. The existing pilot website is not updated by this PR; establish the separate test setup before testing.
 
 ## Important preservation requirements
 Do not lose existing photos, labels, model artifacts, datasets, dealership rules, review history, or working Cloudflare pilot configuration during migrations.
