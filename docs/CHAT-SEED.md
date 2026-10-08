@@ -29,6 +29,8 @@ At conversation start read:
 4. `docs/PROJECT-MANAGEMENT.md`
 5. `docs/AI-WORKFLOW.md`
 6. `docs/V0.2-ROADMAP.md`
+7. `docs/VEHICLE-QC-STRATEGIC-REVIEW-2026-10-07.md`
+8. `docs/VEHICLE-QC-VERSION-TIMELINE-REV2.md`
 7. latest relevant handoff/specification;
 8. relevant ADR/C4/API/Figma files.
 
@@ -37,7 +39,7 @@ Repository artifacts outrank older conversational memory when they are newer.
 ## Current state
 - v0.1 pilot is the stable/presentable baseline.
 - v0.2 is the active planning/development direction.
-- next approved milestone: **v0.2A Production Foundation**.
+- next approved checkpoint: **v0.2A.1 Verified Labels, Coverage, and QC Evidence**, followed by **v0.2A.2 Small-Team Production Foundation**.
 - known-good v0.1 checkpoint: `dc56f77a6105bf9a490e0f2ff07fd7883bb6c1ca`.
 
 ## Product principles
@@ -47,6 +49,10 @@ Repository artifacts outrank older conversational memory when they are newer.
 - independent model lifecycles;
 - Human Training remains browser-first until native capture needs justify Android;
 - do not expand v0.2 with attractive v0.3 ideas without an explicit product decision.
+- prioritize measurable operational value over generic AI feature count;
+- keep suggested/defaulted labels distinct from verified truth;
+- begin DigiLot/HomeNet integration research early, but avoid a partial second field workflow;
+- expand specialized ML one validated check at a time after evidence/labels are trustworthy.
 
 ## Human-bottleneck rule
 Only bring the owner true product/business/security/UX/field-test decisions.
