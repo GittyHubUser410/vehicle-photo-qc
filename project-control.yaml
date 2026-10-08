@@ -1,3 +1,5 @@
+schema_version: "1"
+
 project_id: "vehicle-qc"
 display_name: "Vehicle QC"
 status: "focus"
@@ -26,7 +28,8 @@ human_attention:
   default_notification_policy: "digest"
 
 management_standard:
-  version: "1.1"
+  version: "1.2"
   model: "human-bottleneck"
   workflow: "chat-work-codex-work-chat"
   control_center_compatible: true
+  adoption_policy: "next_handoff"
