@@ -13,7 +13,7 @@ repository:
 
 workflow:
   model: "chat-work-codex-work-chat"
-  current_milestone: "v0.2A"
+  current_milestone: "v0.2A.1"
   current_stage: "planning"
 
 links:
