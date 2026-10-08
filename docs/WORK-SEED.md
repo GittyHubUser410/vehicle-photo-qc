@@ -44,3 +44,7 @@ When the human-test queue is full, prefer automation, tests, fixtures, migration
 
 ## Preservation
 No migration or refactor may silently lose existing photos, labels, models, datasets, dealer rules, review history, or working remote-access behavior.
+
+
+## Model-strength guidance
+For substantial handoffs/next steps, apply the Management Standard 1.1 Execution Guidance convention (Difficulty + Light/Standard/Strong/Maximum model strength + rationale + escalation trigger + owner-intervention flag). Global management-policy changes must be proposed to the AI Project Control Center Chat rather than changed locally.
