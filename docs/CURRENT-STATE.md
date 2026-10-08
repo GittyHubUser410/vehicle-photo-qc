@@ -64,7 +64,7 @@ After A.1 passes, continue to **v0.2A.2 — Small-team production foundation**.
 ### A.1 Work review / next action
 
 Architecture/data-model review completed against planning commit
-`15cdbb8988433849aeedf1f3e261064888adef91`. **Implemented on `milestone/v0.2a1-evidence`; pending independent Work verification and owner acceptance.**
+`15cdbb8988433849aeedf1f3e261064888adef91`. **Implemented on `milestone/v0.2a1-evidence`; independent Work review of `d3a89ce` requests one bounded correction before owner acceptance.**
 
 - Work review: `docs/architecture/V0.2A.1-REVIEW.md`.
 - Engineering decision: `docs/architecture/decisions/ADR-004-label-and-check-evidence.md`.
@@ -73,9 +73,11 @@ Architecture/data-model review completed against planning commit
 - Implementation base: `e913a1e` on `docs/v0.2-planning`.
 - Codex report: `docs/handoffs/codex-to-work/V0.2A.1.md`.
 - Implementation PR: https://github.com/GittyHubUser410/vehicle-photo-qc/pull/10 (open; do not merge/deploy under the Codex handoff).
-- Next executor: Work, independently verify the implementation PR against the bounded handoff.
+- Independent review/correction handoff: `docs/handoffs/work-to-codex/V0.2A.1-CORRECTIONS.md`.
+- Work verification: 60 backend tests, 9 browser tests, lint and production build passed; a targeted fixture reproduced incorrect classifier execution status for low-confidence inference (R1).
+- Next executor: Codex, correct R1 on the existing PR branch; then Work independently rechecks. Do not merge/deploy or begin A.2.
 - No new owner decision blocks implementation under the locked Chat handoff.
-- Work independently verifies the resulting PR before the 15–30 minute owner acceptance session.
+- Owner acceptance is not ready yet. Work must clear the correction before the 15–30 minute owner acceptance session.
 
 ## Important preservation requirements
 Do not lose existing photos, labels, model artifacts, datasets, dealership rules, review history, or working Cloudflare pilot configuration during migrations.
