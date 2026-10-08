@@ -77,8 +77,12 @@ A milestone is done only when:
 
 
 ## Model guidance
-Substantial handoffs should carry model-name-agnostic Execution Guidance from Management Standard 1.2. Prefer the least-powerful model class reasonably likely to complete the task correctly. Escalate global management-policy changes to the AI Project Control Center Chat.
+Substantial handoffs should carry model-name-agnostic Execution Guidance from Management Standard 1.3. Prefer the least-powerful model class reasonably likely to complete the task correctly. Escalate global management-policy changes to the AI Project Control Center Chat.
 
 
 ## Durable control-plane rules
-Management Standard 1.2 adds accountable-human vs executor separation, Project → Workflow → Run → Action identity for future durable orchestration, pause/resume human gates, deterministic policy boundaries, idempotency/deduplication before autonomous writes, and shadow automation before autonomous transitions. These rules do not grant new mutation authority.
+Management Standard 1.3 adds accountable-human vs executor separation, Project → Workflow → Run → Action identity for future durable orchestration, pause/resume human gates, deterministic policy boundaries, idempotency/deduplication before autonomous writes, and shadow automation before autonomous transitions. These rules do not grant new mutation authority.
+
+
+## Owner-facing document style
+For substantial owner-facing Google Docs, roadmaps, plans, research reports, or management guides, use the canonical AI Project Control Center `docs/DOCUMENT-STYLE-GUIDE.md`. Apply its professional engineering-document presentation automatically unless the owner requests another style or an external template takes precedence.
