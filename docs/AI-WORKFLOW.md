@@ -74,3 +74,7 @@ A milestone is done only when:
 7. a known-good checkpoint is recorded;
 8. CURRENT-STATE is updated;
 9. roadmap, ADR, C4, API contract, Figma references, and issues are updated when the change materially affects them.
+
+
+## Model guidance
+Substantial handoffs should carry model-name-agnostic Execution Guidance from Management Standard 1.1. Prefer the least-powerful model class reasonably likely to complete the task correctly. Escalate global management-policy changes to the AI Project Control Center Chat.
