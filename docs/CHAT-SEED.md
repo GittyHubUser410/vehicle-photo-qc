@@ -64,4 +64,7 @@ After reading the repo, respond only with:
 
 
 ## Model-strength guidance
-For substantial handoffs/next steps, apply the Management Standard 1.1 Execution Guidance convention (Difficulty + Light/Standard/Strong/Maximum model strength + rationale + escalation trigger + owner-intervention flag). Global management-policy changes must be proposed to the AI Project Control Center Chat rather than changed locally.
+For substantial handoffs/next steps, apply the Management Standard 1.2 Execution Guidance convention (Difficulty + Light/Standard/Strong/Maximum model strength + rationale + escalation trigger + owner-intervention flag). Global management-policy changes must be proposed to the AI Project Control Center Chat rather than changed locally.
+
+
+Management Standard 1.2 is a next-handoff migration. Preserve the owner as accountable human, treat the AI role as executor/delegate, and route any proposed global management-policy change back to the AI Project Control Center Chat.
