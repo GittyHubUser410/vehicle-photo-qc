@@ -1,5 +1,14 @@
 # Vehicle QC v0.2 Codex handoff
 
+## Current checkpoint override — v0.2A.1
+
+The active next task is `docs/handoffs/work-to-codex/V0.2A.1.md` on
+`docs/v0.2-planning`. Read CURRENT-STATE and that bounded handoff first.
+Start implementation from the current planning ref containing that handoff, not
+from the older pilot checkpoint below. The older full v0.2A specification is
+background for A.2; do not implement PostgreSQL/accounts/worker redesign in A.1.
+The remaining overview below describes the original release families and pilot baseline.
+
 This folder is the source of truth for the next development cycle.
 
 ## Current code baseline

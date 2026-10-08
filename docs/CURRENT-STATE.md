@@ -61,6 +61,20 @@ Do not treat suggested/defaulted labels as verified ground truth. Manager-visibl
 
 After A.1 passes, continue to **v0.2A.2 — Small-team production foundation**.
 
+### A.1 Work review / next action
+
+Architecture/data-model review completed against planning commit
+`15cdbb8988433849aeedf1f3e261064888adef91`. **Ready for Codex implementation;
+not implemented, independently verified, or owner-accepted.**
+
+- Work review: `docs/architecture/V0.2A.1-REVIEW.md`.
+- Engineering decision: `docs/architecture/decisions/ADR-004-label-and-check-evidence.md`.
+- Bounded implementation handoff: `docs/handoffs/work-to-codex/V0.2A.1.md`.
+- Required evidence: `docs/V0.2A.1-ACCEPTANCE-TESTS.md`.
+- Next executor: Codex, new branch `milestone/v0.2a1-evidence` from current planning ref.
+- No new owner decision blocks implementation under the locked Chat handoff.
+- Work independently verifies the resulting PR before the 15–30 minute owner acceptance session.
+
 ## Important preservation requirements
 Do not lose existing photos, labels, model artifacts, datasets, dealership rules, review history, or working Cloudflare pilot configuration during migrations.
 
