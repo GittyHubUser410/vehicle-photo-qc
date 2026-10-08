@@ -1,6 +1,6 @@
 # Project Management Standard — Vehicle QC
 
-**Management standard:** 1.0  
+**Management standard:** 1.1  
 **Canonical standard:** AI Project Control Center `docs/PROJECT-MANAGEMENT-STANDARD.md`
 
 Vehicle QC uses the human-bottleneck optimized workflow:
@@ -50,3 +50,17 @@ Read:
 - `docs/HUMAN-BOTTLENECK-WORKFLOW.md`
 - `docs/V0.2-ROADMAP.md`
 - current handoff/specification and relevant ADR/C4/API/Figma references.
+
+
+## Model-strength guidance
+Use Management Standard 1.1 Execution Guidance for substantial handoffs and next steps:
+- Difficulty: Low / Medium / High / Very High.
+- Recommended Model Strength: Light / Standard / Strong / Maximum.
+- Why that level is appropriate.
+- Escalation conditions for using a stronger model.
+- Whether owner intervention is required before proceeding.
+
+Routine Light/Standard guidance is informational. Strong/Maximum guidance becomes an owner gate only when model choice materially affects risk, rework, or likelihood of success.
+
+## Management governance
+This project consumes the canonical management standard from `GittyHubUser410/AI-Project-Control-Center`. Project Chat/Work/Codex may propose global workflow improvements but must not redefine the canonical cross-project management standard, model-strength policy, or orchestration authority. Route those proposals to the AI Project Control Center normal Chat.
