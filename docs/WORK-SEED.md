@@ -47,7 +47,11 @@ No migration or refactor may silently lose existing photos, labels, models, data
 
 
 ## Model-strength guidance
-For substantial handoffs/next steps, apply the Management Standard 1.2 Execution Guidance convention (Difficulty + Light/Standard/Strong/Maximum model strength + rationale + escalation trigger + owner-intervention flag). Global management-policy changes must be proposed to the AI Project Control Center Chat rather than changed locally.
+For substantial handoffs/next steps, apply the Management Standard 1.3 Execution Guidance convention (Difficulty + Light/Standard/Strong/Maximum model strength + rationale + escalation trigger + owner-intervention flag). Global management-policy changes must be proposed to the AI Project Control Center Chat rather than changed locally.
 
 
-Management Standard 1.2 is a next-handoff migration. Preserve the owner as accountable human, treat the AI role as executor/delegate, and route any proposed global management-policy change back to the AI Project Control Center Chat.
+Management Standard 1.3 is a next-handoff migration. Preserve the owner as accountable human, treat the AI role as executor/delegate, and route any proposed global management-policy change back to the AI Project Control Center Chat.
+
+
+## Owner-facing document style
+For substantial owner-facing Google Docs, roadmaps, plans, research reports, or management guides, use the canonical AI Project Control Center `docs/DOCUMENT-STYLE-GUIDE.md`. Apply its professional engineering-document presentation automatically unless the owner requests another style or an external template takes precedence.
