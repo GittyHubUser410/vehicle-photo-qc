@@ -153,8 +153,30 @@ def test_remote_mode_verifies_signatures_claims_origins_and_upload_ownership(tmp
         )
         no_origin = {k: v for k, v in valid.items() if k != "Origin"}
         assert c.post("/api/photographers", json={"name": "Blocked"}, headers=no_origin).status_code == 403
-        body = {"metadata": {"mode": "general", "shoot_date": "2026-10-04"}, "count": 1}
+        body = training_upload_body()
+        for origin in ("http://127.0.0.1:8001", "http://localhost:8001"):
+            for auth, status in ((valid, 403), ({}, 401), ({"Cf-Access-Jwt-Assertion": forged}, 401)):
+                before = data_snapshot(tmp_path)
+                rejected = c.post("/api/uploads", json=body, headers={**auth, "Origin": origin})
+                assert rejected.status_code == status
+                assert data_snapshot(tmp_path) == before
+        before = data_snapshot(tmp_path)
+        assert c.post("/api/uploads", json=body, headers=no_origin).status_code == 403
+        assert data_snapshot(tmp_path) == before
         bid = c.post("/api/uploads", json=body, headers=valid).json()["id"]
+        url = f"/api/uploads/{bid}"
+        files = {"file": ("front.jpg", image_bytes(), "image/jpeg")}
+        for origin in ("http://127.0.0.1:8001", "http://localhost:8001"):
+            before = data_snapshot(tmp_path)
+            assert (
+                c.put(url + "/photos/0", files=files, headers={**valid, "Origin": origin}).status_code == 403
+            )
+            assert data_snapshot(tmp_path) == before
+        assert c.put(url + "/photos/0", files=files, headers=valid).status_code == 200
+        for origin in ("http://127.0.0.1:8001", "http://localhost:8001"):
+            before = data_snapshot(tmp_path)
+            assert c.post(url + "/complete", headers={**valid, "Origin": origin}).status_code == 403
+            assert data_snapshot(tmp_path) == before
         assert (
             c.get(f"/api/uploads/{bid}", headers=headers(sub="user-two", email="two@example.com")).status_code
             == 404
@@ -176,3 +198,82 @@ def test_incomplete_remote_configuration_fails_closed_and_local_rejects_tunnel(t
     with TestClient(create_app(tmp_path, start_worker=False)) as c:
         assert c.get("/api/config", headers={"cf-ray": "tunnel-request"}).status_code == 403
         assert c.get("/api/config").status_code == 200
+
+
+def training_upload_body():
+    return {
+        "metadata": {
+            "mode": "general",
+            "shoot_date": "2026-10-10",
+            "purpose": "training",
+            "shot_types": ["front"],
+        },
+        "count": 1,
+    }
+
+
+def data_snapshot(path):
+    return {str(p.relative_to(path)): p.read_bytes() for p in path.rglob("*") if p.is_file()}
+
+
+@pytest.mark.parametrize(
+    "origin",
+    [
+        "http://127.0.0.1:8001",
+        "http://localhost:8001",
+        "http://127.0.0.1:8000",
+        "http://localhost:8000",
+        "http://127.0.0.1:5173",
+        "http://localhost:5173",
+        None,
+    ],
+)
+def test_local_training_upload_origins_preserve_bytes_and_suggested_evidence(tmp_path, origin):
+    with TestClient(create_app(tmp_path, start_worker=False)) as c:
+        headers = {"Origin": origin} if origin is not None else {}
+        created = c.post("/api/uploads", json=training_upload_body(), headers=headers)
+        assert created.status_code == 201, created.text
+        url = f"/api/uploads/{created.json()['id']}"
+        original = image_bytes()
+        uploaded = c.put(
+            url + "/photos/0", files={"file": ("front.jpg", original, "image/jpeg")}, headers=headers
+        )
+        assert uploaded.status_code == 200, uploaded.text
+        completed = c.post(url + "/complete", headers=headers)
+        assert completed.status_code == 201, completed.text
+        photo = c.get(f"/api/shoots/{completed.json()['id']}").json()["photos"][0]
+        assert c.get(f"/api/photos/{photo['id']}/original").content == original
+        assert (tmp_path / photo["original_key"]).read_bytes() == original
+        assert photo["shot_evidence"]["state"] == "suggested"
+        assert {e["state"] for e in photo["training"]["label_evidence"].values()} == {"suggested"}
+        assert photo["training"]["eligible"] and not photo["training"]["exportable"]
+
+
+@pytest.mark.parametrize(
+    "headers",
+    [
+        {"Origin": "https://evil.example.com"},
+        {"Origin": "null"},
+        {"Origin": "http://127.0.0.1:8002"},
+        {"Origin": "http://localhost.evil.example.com:8001"},
+        {"Origin": "http://127.0.0.1:8001", "cf-ray": "tunnel-request"},
+        {"Origin": "http://localhost:8001", "Cf-Access-Jwt-Assertion": "tunnel-request"},
+    ],
+)
+def test_local_rejected_upload_requests_never_write_data(tmp_path, headers):
+    with TestClient(create_app(tmp_path, start_worker=False)) as c:
+        body = training_upload_body()
+        before = data_snapshot(tmp_path)
+        assert c.post("/api/uploads", json=body, headers=headers).status_code == 403
+        assert data_snapshot(tmp_path) == before
+        bid = c.post("/api/uploads", json=body).json()["id"]
+        url = f"/api/uploads/{bid}"
+        files = {"file": ("front.jpg", image_bytes(), "image/jpeg")}
+        before = data_snapshot(tmp_path)
+        assert c.put(url + "/photos/0", files=files, headers=headers).status_code == 403
+        assert data_snapshot(tmp_path) == before
+        assert c.put(url + "/photos/0", files=files).status_code == 200
+        before = data_snapshot(tmp_path)
+        assert c.post(url + "/complete", headers=headers).status_code == 403
+        assert data_snapshot(tmp_path) == before
+        assert c.get("/api/shoots?purpose=training").json()["total"] == 0
