@@ -2,7 +2,7 @@
 
 ## Standard loop
 
-Chat → Work → Codex → Work → Chat.
+Chat → Work → Codex → Independent Review → Human Acceptance → Chat.
 
 GitHub is the durable source of truth. Conversation messages should point agents to repository artifacts rather than carrying the full project history.
 
@@ -14,7 +14,11 @@ This project is optimized around the user's limited decision/testing time rather
 Owns product behavior, UX, priorities, roadmap decisions, business rules, research, and Chat → Work handoffs.
 
 ### Work
-Owns repository inspection, feasibility, architecture, migrations/dependencies, technical risk, sequencing, acceptance criteria, and independent post-Codex verification.
+Owns repository inspection, feasibility, architecture, migrations/dependencies, technical risk, sequencing, acceptance criteria, and engineering preflight.
+
+### Independent Review
+
+For newly migrated workflows, formally verifies Codex changes in a separate read-only review, comparing the approved scope, PR/diff, tests, evidence and prior checkpoint. Does not make product decisions or implement fixes; sends ordinary defects to Codex for correction and re-review.
 
 ### Codex
 Owns scoped implementation, tests, debugging, refactors, migrations, and the Codex → Work implementation report. It must not silently expand product scope.
@@ -69,20 +73,30 @@ A milestone is done only when:
 2. Work approves the engineering plan;
 3. implementation is complete;
 4. required automated checks pass;
-5. Work independently verifies against the specification;
+5. Independent Review formally verifies for newly migrated workflows; prior A.1 Work verification retains its historical authority;
 6. required manual acceptance checks pass;
 7. a known-good checkpoint is recorded;
 8. CURRENT-STATE is updated;
 9. roadmap, ADR, C4, API contract, Figma references, and issues are updated when the change materially affects them.
 
 
-## Model guidance
-Substantial handoffs should carry model-name-agnostic Execution Guidance from Management Standard 1.3. Prefer the least-powerful model class reasonably likely to complete the task correctly. Escalate global management-policy changes to the AI Project Control Center Chat.
+## Model guidance and cross-chat continuation
 
+Follow Management Standard 1.5.3.2. At the bottom of substantial handoffs, put **Model Recommendation** with a top-of-section ✅ NO CHANGE NEEDED or 🔁 CHANGE RECOMMENDED verdict, current/recommended model and reasoning strength (🪶 Light / 💬 Standard / 🧠 Strong / 🧠⚡ Maximum), task difficulty, verification diversity, escalation trigger, and owner-action requirement. Do not use the obsolete terminal `MODEL CHANGE:` line. Blocking pre-task escalation remains immediate.
+
+Every completed handoff must supply a copy/paste **Next-chat handoff note** after its durable report. Codex → Independent Review is mandatory for newly migrated workflows.
 
 ## Durable control-plane rules
-Management Standard 1.3 adds accountable-human vs executor separation, Project → Workflow → Run → Action identity for future durable orchestration, pause/resume human gates, deterministic policy boundaries, idempotency/deduplication before autonomous writes, and shadow automation before autonomous transitions. These rules do not grant new mutation authority.
 
+Maintain accountable human vs executor roles, Project → Workflow → Run → Action identity, human pause/resume gates, deterministic permission boundaries, idempotency/deduplication before autonomous writes, and shadow automation. No new mutation authority is granted.
+
+## Existing A.1 checkpoint boundary
+
+A.1 on `milestone/v0.2a1-evidence` at `3bc23ea` was independently Work-verified under its earlier authorized process; R1 is closed. It remains unaccepted, unmerged and undeployed. Do not reinterpret or rewrite its historical handoffs. A locally reproduced isolated test-port origin error is a setup/implementation finding for bounded correction; do not alter production Cloudflare settings or pilot data.
+
+## Owner-facing technical guidance
+
+Use the canonical 1.5.3.2 semantic markers: 🟢 action, 🔴 replacement only when actually required, 🔵 information, 🟠 purpose, 🟣 expected/actual, 🟡 direct owner instruction and 🛑 stop. Name parallel PowerShell windows by task and purpose, pair technical terms with plain-English meaning, and ask Yes/No when the expected result is unambiguous.
 
 ## Owner-facing document style
 For substantial owner-facing Google Docs, roadmaps, plans, research reports, or management guides, use the canonical AI Project Control Center `docs/DOCUMENT-STYLE-GUIDE.md`. Apply its professional engineering-document presentation automatically unless the owner requests another style or an external template takes precedence.

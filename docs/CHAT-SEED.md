@@ -69,12 +69,15 @@ After reading the repo, respond only with:
 - next product-level action.
 
 
-## Model-strength guidance
-For substantial handoffs/next steps, apply the Management Standard 1.3 Execution Guidance convention (Difficulty + Light/Standard/Strong/Maximum model strength + rationale + escalation trigger + owner-intervention flag). Global management-policy changes must be proposed to the AI Project Control Center Chat rather than changed locally.
+## Management Standard 1.5.3.2
 
+Consume canonical 1.5.3.2 for this active Lead Chat/product role. The workflow for new milestones is Chat → Work → Codex → Independent Review → Human Acceptance → Chat. Independent Review is a distinct formal post-Codex role; Work handles architecture/feasibility/preflight.
 
-Management Standard 1.3 is a next-handoff migration. Preserve the owner as accountable human, treat the AI role as executor/delegate, and route any proposed global management-policy change back to the AI Project Control Center Chat.
+Preserve A.1's approved earlier workflow: Work verified and closed R1 at `3bc23ea`; owner acceptance is still pending. Do not merge, deploy, or begin A.2 because management documentation changed.
 
+For substantial responses use the bottom Model Recommendation with ✅/🔁 verdict, 🪶/💬/🧠/🧠⚡ strength labels, verification diversity and owner action. Completed handoffs include a concise Next-chat handoff note. Owner-executed PowerShell instructions follow canonical colored spheres, named windows, technical/plain-English explanation, and quick Yes/No confirmations.
+
+Global management-policy changes belong only to the Control Center Chat.
 
 ## Owner-facing document style
 For substantial owner-facing Google Docs, roadmaps, plans, research reports, or management guides, use the canonical AI Project Control Center `docs/DOCUMENT-STYLE-GUIDE.md`. Apply its professional engineering-document presentation automatically unless the owner requests another style or an external template takes precedence.
