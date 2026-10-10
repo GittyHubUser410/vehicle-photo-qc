@@ -48,7 +48,7 @@ Integration research for DigiLot/HomeNet begins immediately, but production inte
 - Future desktop application, if built, is an operations/ML tool rather than the primary app.
 
 ## Workflow
-Chat → Work → Codex → Work → Chat.
+New milestones: Chat → Work → Codex → Independent Review → Human Acceptance → Chat (canonical 1.5.3.2). Existing A.1 Work verification remains valid under its previously approved standard.
 
 GitHub Issues should track implementation-sized work. The v0.2 GitHub Project is the execution view. Important UI-heavy work should have an approved Figma/FigJam reference before implementation.
 
@@ -84,3 +84,12 @@ A separate cross-project Control Center project is approved. Vehicle QC should e
 
 ## Strategic pilot direction
 Vehicle QC should be treated as a focused operational-quality pilot rather than a generic AI-photo product. The business case should be proven through measurable reductions in review labor, reshoots/return visits, false alerts, and delivery uncertainty. Specialized ML expansion is evidence-gated: add one validated high-value check at a time rather than several model families in parallel.
+
+
+## Management migration — pending documentation PR
+
+Vehicle QC has a proposed documentation-only migration to canonical Management Standard **1.5.3.2**. It updates the live role seeds and the new-workflow protocol without revising historical A.1 verification documents or accepted product scope. The planned management PR is separate from implementation PR #10. Root `project-control.yaml` lives on `main` and should only advertise repository adoption after the documentation PR is accepted and reconciled.
+
+## A.1 owner test observation (not yet resolved)
+
+The separate Windows A.1 checkout `3bc23ea`, bound to `127.0.0.1:8001` with disposable storage `G:\\Projects\\vehicle-photo-qc-a1-test-data`, loads locally but training upload received 403: “Requests must come from this app's own address.” The local origin allowlist currently lists ports 8000 and 5173. This is a blocked owner test pending bounded correction and separate verification; do not interpret it as failed product acceptance, merge/deploy PR #10, change production Cloudflare settings, or begin A.2.
