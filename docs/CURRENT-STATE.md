@@ -48,7 +48,7 @@ Integration research for DigiLot/HomeNet begins immediately, but production inte
 - Future desktop application, if built, is an operations/ML tool rather than the primary app.
 
 ## Workflow
-Chat → Work → Codex → Work → Chat.
+The historical A.1 workflow was Chat → Work → Codex → Work → Chat. The explicitly authorized port-8001 correction uses Standard 1.5.3.2: Chat → Work → Codex → Independent Review → Human Acceptance → Chat. Repository-wide adoption remains draft PR #11; this does not merge that proposal or expand authority.
 
 GitHub Issues should track implementation-sized work. The v0.2 GitHub Project is the execution view. Important UI-heavy work should have an approved Figma/FigJam reference before implementation.
 
@@ -79,7 +79,17 @@ Architecture/data-model review completed against planning commit
 - Independent verification and Human Test Packet: `docs/handoffs/work-to-chat/V0.2A.1-VERIFICATION.md`.
 - Next executor: Chat, coordinate the 15–30 minute owner acceptance session on the reviewed branch using disposable data. Do not merge/deploy or begin A.2 under this review.
 - No new owner decision blocks implementation under the locked Chat handoff.
-- Owner acceptance is ready to schedule but has not occurred. The existing pilot website is not updated by this PR; establish the separate test setup before testing.
+- Owner acceptance started in the isolated Windows checkout but import was blocked by the local port-8001 origin restriction. The bounded correction below passed Independent Review; actual Windows retry and the remaining A.1 acceptance steps are pending. The pilot website has not been updated.
+
+### Isolated local port-8001 correction
+
+- Draft PR #12: `fix/a1-local-origin-8001`, targeting `milestone/v0.2a1-evidence`; neither PR is merged/deployed.
+- Reviewed correction checkpoint: `9bee7291360a18012379dd4a9aa51088f1494e93` (exactly two local origins added; remote authentication and origin checks unchanged).
+- Fresh Independent Review PASS, 2026-10-15: 81 backend tests, Ruff, diff checks, and separate baseline/corrected/adversarial HTTP probes. No physical Windows execution or acceptance is inferred from Linux tests.
+- Formal report: `docs/handoffs/independent-review-to-chat/V0.2A.1-LOCAL-ORIGIN.md`.
+- Pinned restart instructions: `docs/LOCAL-ORIGIN-8001-RESTART.md`. Use only the isolated test checkout and existing disposable test data, port8001, no proxy headers. Preserve pilot/Cloudflare.
+- Next action: owner retries isolated Windows training import, then resumes the original A.1 acceptance packet. Failure returns to bounded correction/review; A.2 remains excluded.
+- Management PR #11 Work findings: `docs/handoffs/work-to-chat/PR11-MANAGEMENT-REVIEW.md`; M1–M4 remain documentation issues, not an assertion that repository adoption completed.
 
 ## Important preservation requirements
 Do not lose existing photos, labels, model artifacts, datasets, dealership rules, review history, or working Cloudflare pilot configuration during migrations.
