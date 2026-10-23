@@ -56,7 +56,7 @@ Read:
 
 For newly migrated implementation work, Independent Review is the separate formal read-only post-Codex verification role. Work remains architecture/feasibility/handoff owner and can conduct technical preflight. Review uses repository evidence, acceptance criteria, Codex report, and an independently inspected PR/checkpoint; ordinary implementation defects return to Codex for re-review.
 
-**Existing A.1 exception:** Under the earlier approved 1.3 workflow, Work independently verified A.1 and closed R1 at `3bc23ea`. Preserve that completed review and its exact evidence; owner acceptance is still pending. The new role separation governs later explicitly migrated workflows and must not retroactively label A.1 unverified or accepted.
+**Existing A.1 exception:** Under the earlier approved 1.3 workflow, Work independently verified A.1 executable head `d78dd5b403cf5a3e4077077afb5123992d2a38b7` and closed R1; `3bc23ea19c5af356b6f380f53ac72a84d9e53f9f` is the later documentation/PR publication checkpoint. Preserve that completed review and its exact evidence; owner acceptance is still pending. The new role separation governs later explicitly migrated workflows and must not retroactively label A.1 unverified or accepted.
 
 ## Model-strength guidance
 
