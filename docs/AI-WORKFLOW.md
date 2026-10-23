@@ -21,7 +21,7 @@ Owns repository inspection, feasibility, architecture, migrations/dependencies, 
 For newly migrated workflows, formally verifies Codex changes in a separate read-only review, comparing the approved scope, PR/diff, tests, evidence and prior checkpoint. Does not make product decisions or implement fixes; sends ordinary defects to Codex for correction and re-review.
 
 ### Codex
-Owns scoped implementation, tests, debugging, refactors, migrations, and the Codex → Work implementation report. It must not silently expand product scope.
+Owns scoped implementation, tests, debugging, refactors, migrations, and the Codex → Independent Review implementation report. It must not silently expand product scope.
 
 ## Required project artifacts
 
@@ -82,7 +82,7 @@ A milestone is done only when:
 
 ## Model guidance and cross-chat continuation
 
-Follow Management Standard 1.5.3.2. At the bottom of substantial handoffs, put **Model Recommendation** with a top-of-section ✅ NO CHANGE NEEDED or 🔁 CHANGE RECOMMENDED verdict, current/recommended model and reasoning strength (🪶 Light / 💬 Standard / 🧠 Strong / 🧠⚡ Maximum), task difficulty, verification diversity, escalation trigger, and owner-action requirement. Do not use the obsolete terminal `MODEL CHANGE:` line. Blocking pre-task escalation remains immediate.
+Follow Management Standard 1.8.0. At the bottom of substantial handoffs, put **Model Recommendation** with a top-of-section ✅ NO CHANGE NEEDED or 🔁 CHANGE RECOMMENDED verdict, current/recommended model and reasoning strength (🪶 Light / 💬 Standard / 🧠 Strong / 🧠⚡ Maximum), task difficulty, verification diversity, escalation trigger, and owner-action requirement. Do not use the obsolete terminal `MODEL CHANGE:` line. Blocking pre-task escalation remains immediate.
 
 Every completed handoff must supply a copy/paste **Next-chat handoff note** after its durable report. Codex → Independent Review is mandatory for newly migrated workflows.
 
@@ -96,7 +96,11 @@ A.1 on `milestone/v0.2a1-evidence` at `3bc23ea` was independently Work-verified 
 
 ## Owner-facing technical guidance
 
-Use the canonical 1.5.3.2 semantic markers: 🟢 action, 🔴 replacement only when actually required, 🔵 information, 🟠 purpose, 🟣 expected/actual, 🟡 direct owner instruction and 🛑 stop. Name parallel PowerShell windows by task and purpose, pair technical terms with plain-English meaning, and ask Yes/No when the expected result is unambiguous.
+Use the canonical 1.8.0 semantic markers: 🟢 action, 🔴 replacement only when actually required, 🔵 information, 🟠 purpose, 🟣 expected/actual, 🟡 direct owner instruction and 🛑 stop. Name parallel PowerShell windows by task and purpose, pair technical terms with plain-English meaning, and ask Yes/No when the expected result is unambiguous.
 
 ## Owner-facing document style
 For substantial owner-facing Google Docs, roadmaps, plans, research reports, or management guides, use the canonical AI Project Control Center `docs/DOCUMENT-STYLE-GUIDE.md`. Apply its professional engineering-document presentation automatically unless the owner requests another style or an external template takes precedence.
+
+## Work execution-envelope protocol — canonical 1.8.0
+
+Apply WM1–WM6 only after scope and available capabilities are checked. A Work envelope lists named milestones, dependencies, actual authorized delegation, review checkpoints, paused gates and eligible parallel tasks. Preserve exact commit/PR evidence for each checkpoint; do not treat documentary preparation as runtime verification or as merge/deployment authority. Independent Review and human acceptance remain separate. A blocker must not be bypassed by changing chats or task names.
