@@ -92,7 +92,7 @@ Maintain accountable human vs executor roles, Project → Workflow → Run → A
 
 ## Existing A.1 checkpoint boundary
 
-A.1 on `milestone/v0.2a1-evidence` at `3bc23ea` was independently Work-verified under its earlier authorized process; R1 is closed. It remains unaccepted, unmerged and undeployed. Do not reinterpret or rewrite its historical handoffs. A locally reproduced isolated test-port origin error is a setup/implementation finding for bounded correction; do not alter production Cloudflare settings or pilot data.
+A.1 on `milestone/v0.2a1-evidence` had executable head `d78dd5b403cf5a3e4077077afb5123992d2a38b7` independently Work-verified under its earlier authorized process; `3bc23ea19c5af356b6f380f53ac72a84d9e53f9f` is its later documentation/PR publication checkpoint; R1 is closed. It remains unaccepted, unmerged and undeployed. Do not reinterpret or rewrite its historical handoffs. A locally reproduced isolated test-port origin error is a setup/implementation finding for bounded correction; do not alter production Cloudflare settings or pilot data.
 
 ## Owner-facing technical guidance
 
