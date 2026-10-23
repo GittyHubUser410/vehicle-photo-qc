@@ -62,7 +62,7 @@ No migration or refactor may silently lose existing photos, labels, models, data
 
 Follow canonical 1.8.0 for new engineering handoffs: Chat → Work → Codex → Independent Review → Human Acceptance → Chat. Work owns architecture, feasibility, technical preflight and bounded handoffs; independent post-Codex verification belongs to the separately seeded Independent Review role.
 
-A.1 at checkpoint `3bc23ea` was already Work-verified under its earlier accepted standard with R1 closed. Owner acceptance remains pending. The isolated port-8001 origin failure must be investigated/corrected within a bounded task; do not change pilot/Cloudflare settings, merge, deploy or start A.2.
+A.1 at executable Work-reviewed head `d78dd5b403cf5a3e4077077afb5123992d2a38b7` (later documentation/PR publication checkpoint `3bc23ea19c5af356b6f380f53ac72a84d9e53f9f`) was already Work-verified under its earlier accepted standard with R1 closed. Owner acceptance remains pending. The isolated port-8001 origin failure must be investigated/corrected within a bounded task; do not change pilot/Cloudflare settings, merge, deploy or start A.2.
 
 Substantial handoffs end with the bottom Model Recommendation using ✅ NO CHANGE NEEDED / 🔁 CHANGE RECOMMENDED at the top of that block, 🪶 Light / 💬 Standard / 🧠 Strong / 🧠⚡ Maximum icons, diversity guidance and an owner-action field. Supply copy/paste Next-chat handoff notes. Preserve the canonical colored-sphere owner-facing command style.
 
