@@ -58,9 +58,9 @@ When the human-test queue is full, prefer automation, tests, fixtures, migration
 No migration or refactor may silently lose existing photos, labels, models, datasets, dealer rules, review history, or working remote-access behavior.
 
 
-## Management Standard 1.5.3.2
+## Management Standard 1.8.0
 
-Follow canonical 1.5.3.2 for new engineering handoffs: Chat → Work → Codex → Independent Review → Human Acceptance → Chat. Work owns architecture, feasibility, technical preflight and bounded handoffs; independent post-Codex verification belongs to the separately seeded Independent Review role.
+Follow canonical 1.8.0 for new engineering handoffs: Chat → Work → Codex → Independent Review → Human Acceptance → Chat. Work owns architecture, feasibility, technical preflight and bounded handoffs; independent post-Codex verification belongs to the separately seeded Independent Review role.
 
 A.1 at checkpoint `3bc23ea` was already Work-verified under its earlier accepted standard with R1 closed. Owner acceptance remains pending. The isolated port-8001 origin failure must be investigated/corrected within a bounded task; do not change pilot/Cloudflare settings, merge, deploy or start A.2.
 
@@ -70,3 +70,7 @@ Proposed global policy changes go to Control Center Chat; no new mutation author
 
 ## Owner-facing document style
 For substantial owner-facing Google Docs, roadmaps, plans, research reports, or management guides, use the canonical AI Project Control Center `docs/DOCUMENT-STYLE-GUIDE.md`. Apply its professional engineering-document presentation automatically unless the owner requests another style or an external template takes precedence.
+
+## WM1–WM6 execution preference
+
+For explicitly authorized cohesive milestone envelopes, maximize useful verified progress per owner-attention hour; use supported Codex delegation only within its actual scope and permissions; use independent review; checkpoint progress in GitHub; continue unrelated eligible preparation when a dependent milestone is blocked; return a finite, evidence-labeled closure report. No implied direct Work implementation or A.2 authorization.
