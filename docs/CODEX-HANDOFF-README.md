@@ -66,3 +66,8 @@ When a Codex task is started, tell Codex:
 
 > Read `docs/CODEX-HANDOFF-README.md` and all files it links before modifying code. Implement only the milestone explicitly requested. Preserve existing architecture and user data. Run the documented tests and report any deviation before expanding scope.
 
+
+
+## Current workflow override — proposed Management Standard 1.8.0
+
+For newly adopted work, the current role path is **Chat → Work → Codex → Independent Review → Human Acceptance → Chat**; Codex returns evidence to Independent Review, not directly to the owner. Work may coordinate authorized cohesive WM1–WM6 execution envelopes, but has no new direct coding/dispatch authority. Prior A.1 handoffs are immutable historical evidence. The present A.1 test is owner-acceptance pending; no A.2 implementation, merge or deployment is authorized. This section supersedes legacy role routing in this document when PR #11 is accepted.
