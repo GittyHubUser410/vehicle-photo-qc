@@ -1,6 +1,6 @@
 # Project Management Standard — Vehicle QC
 
-**Management standard:** 1.5.3.2  
+**Management standard:** 1.8.0  
 **Canonical standard:** AI Project Control Center `docs/PROJECT-MANAGEMENT-STANDARD.md`
 
 Vehicle QC uses the human-bottleneck optimized workflow:
@@ -60,7 +60,7 @@ For newly migrated implementation work, Independent Review is the separate forma
 
 ## Model-strength guidance
 
-Use canonical Management Standard 1.5.3.2. Substantial handoffs place a Model Recommendation section at the bottom with a prominent **✅ NO CHANGE NEEDED** or **🔁 CHANGE RECOMMENDED** verdict at its top. Include current/recommended model, strength, task difficulty, verification diversity, escalation conditions and owner-action requirements; no legacy terminal MODEL CHANGE line.
+Use canonical Management Standard 1.8.0. Substantial handoffs place a Model Recommendation section at the bottom with a prominent **✅ NO CHANGE NEEDED** or **🔁 CHANGE RECOMMENDED** verdict at its top. Include current/recommended model, strength, task difficulty, verification diversity, escalation conditions and owner-action requirements; no legacy terminal MODEL CHANGE line.
 
 Reasoning-strength icons: 🪶 Light, 💬 Standard, 🧠 Strong, 🧠⚡ Maximum. Copy/paste cross-chat messages show the recommended model/strength nearby, and completed handoffs include a concise Next-chat handoff note. A genuinely blocking inadequacy is raised before deep work.
 
@@ -79,12 +79,16 @@ This project consumes the canonical management standard from `GittyHubUser410/AI
 - Management Standard version and project-control schema version are separate.
 - Repository adoption and active-conversation adoption are separate states.
 
-This is a minor / next-handoff migration and grants no new agent authority.
+The proposed 1.8.0 adoption is a **major governance/process migration (G2)**; the owner has authorized preparation, but documentary Independent Review and exact PR acceptance remain required. It grants no new agent authority.
 
 
 ## Owner-facing document style
 For substantial owner-facing Google Docs, roadmaps, plans, research reports, or management guides, use the canonical AI Project Control Center `docs/DOCUMENT-STYLE-GUIDE.md`. Apply its professional engineering-document presentation automatically unless the owner requests another style or an external template takes precedence.
 
+## Work-maximized execution envelopes (WM1–WM6)
+
+Where already authorized product scope and dependencies allow, Work should prefer a cohesive, milestone-spanning, owner-preauthorized execution envelope. Continue eligible work without repetitive microapprovals, while retaining the separate authority of Codex implementation and Independent Review. Record intermediate GitHub commits, actual tests and unknowns, recover from immutable verified state, and stop only the blocked dependency. Consolidate owner questions and closure. Never claim unrun evidence as PASS; no paid spending, credentials change, deployment or merge without separate authority. A.1 remains held at the owner acceptance gate, and A.2 remains unapproved.
+
 ## Adoption state
 
-This file is the **proposed repository adoption** of 1.5.3.2 until its documentation PR is accepted/merged. The active Chat and Work conversations adopt the newer instructions independently. Historical handoffs and the pilot release retain their original approved standard and authority. The project-control schema version remains independent of the management-standard version.
+This file is the **proposed repository adoption** of 1.8.0 until its documentation PR is accepted/merged. The active Chat and Work conversations adopt the newer instructions independently. Historical handoffs and the pilot release retain their original approved standard and authority. The project-control schema version remains independent of the management-standard version.
