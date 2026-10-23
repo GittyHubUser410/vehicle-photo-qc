@@ -37,13 +37,16 @@ AI should stay ahead of the human decision/test bottleneck without creating a la
    - AI runs tests and performs self-review.
    - Prefer at most 2–3 concurrent implementation branches, and only when they do not touch the same architecture/data surfaces.
 
-6. **AI Verification**
-   - Work independently checks implementation, tests, migrations, preservation requirements, and acceptance criteria.
-   - Failures return to Codex without consuming user attention when they can be resolved internally.
+6. **Independent Review (newly migrated workflows)**
+   - Work performs architecture, feasibility, handoff preparation and engineering preflight; Work self-review is not the formal post-Codex gate.
+   - A separate Independent Review role examines the exact Codex diff/checkpoint, requirements, tests, migration/preservation evidence, and acceptance criteria, read-only by default.
+   - Ordinary defects return to Codex for bounded correction, followed by Independent Review re-verification, without consuming owner attention when no genuine product/security/data/authority decision arises.
+   - Historical exception: A.1's executable head `d78dd5b403cf5a3e4077077afb5123992d2a38b7` was independently reviewed by Work under its earlier authorized workflow, with report-only publication checkpoint `3bc23ea19c5af356b6f380f53ac72a84d9e53f9f`. That review and closed R1 remain valid, but A.1 human acceptance is pending.
+   - Documentary review alone never establishes runtime behavior, operational readiness, or release authorization.
 
 7. **Ready for Human Test**
    - Only work that has passed AI verification reaches the user.
-   - AI provides a Human Test Packet containing exact steps, expected result, screenshots/logs when useful, known limitations, and rollback/recovery notes.
+   - After the applicable formal verification gate, AI provides a Human Test Packet containing exact steps, expected result, screenshots/logs when useful, known limitations, and rollback/recovery notes.
 
 8. **Human Test**
    - The user tests only the highest-value ready items.
@@ -62,7 +65,7 @@ Recommended initial limits:
 - Ready for Human Test: maximum 3 items.
 - Human Test in Progress: maximum 1–2 items.
 - AI Implementation: maximum 2–3 independent branches.
-- AI Verification: no artificial cap, but verification should be prioritized before starting more implementation when the Human Test queue is full.
+- Independent Review: no artificial cap, but formal verification should be prioritized before starting more implementation when the Human Test queue is full.
 
 When the Human Test queue reaches its limit, AI should stop generating additional user-testable features and switch to work that reduces future human effort: automated tests, fixtures, documentation, observability, migration rehearsal, dataset preparation, Figma planning, or future handoff preparation.
 
