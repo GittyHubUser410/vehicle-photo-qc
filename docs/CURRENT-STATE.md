@@ -63,7 +63,7 @@ After A.1 passes, continue to **v0.2A.2 — Small-team production foundation**.
 
 ### A.1 verified engineering state / pending owner action
 
-- A.1 implementation PR #10: `milestone/v0.2a1-evidence` at `3bc23ea19c5af356b6f380f53ac72a84d9e53f9f`, open/unmerged. Earlier Work independent verification closed R1 under the then-governing 1.3 workflow; this historical gate remains valid.
+- A.1 implementation PR #10: `milestone/v0.2a1-evidence`, open/unmerged. **Executable Work-reviewed head:** `d78dd5b403cf5a3e4077077afb5123992d2a38b7`; **later documentation/PR publication checkpoint:** `3bc23ea19c5af356b6f380f53ac72a84d9e53f9f`. The intervening commit changed documentation only. Earlier Work independent verification closed R1 under the then-governing 1.3 workflow; this historical gate remains valid.
 - Isolated localhost:8001 correction PR #12: `fix/a1-local-origin-8001`; executable Independent Review **PASS** at exact code commit `9bee7291360a18012379dd4a9aa51088f1494e93` (2026-10-15). Review report: `docs/handoffs/independent-review-to-chat/V0.2A.1-LOCAL-ORIGIN.md`; restart instructions: `docs/LOCAL-ORIGIN-8001-RESTART.md` on the correction branch.
 - Local Windows owner upload retry and remaining six-step A.1 Human Test Packet are **PENDING**, not PASS; no production or physical Windows assertion follows from the Linux/ASGI review.
 - A.1 is not accepted, merged, deployed or a newly recorded known-good checkpoint. A.2 remains unauthorized.
