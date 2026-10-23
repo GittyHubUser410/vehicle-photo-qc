@@ -48,7 +48,7 @@ Integration research for DigiLot/HomeNet begins immediately, but production inte
 - Future desktop application, if built, is an operations/ML tool rather than the primary app.
 
 ## Workflow
-New milestones: Chat → Work → Codex → Independent Review → Human Acceptance → Chat (canonical 1.5.3.2). Existing A.1 Work verification remains valid under its previously approved standard.
+New milestones: Chat → Work → Codex → Independent Review → Human Acceptance → Chat (canonical 1.8.0). Existing A.1 Work verification remains valid under its previously approved standard.
 
 GitHub Issues should track implementation-sized work. The v0.2 GitHub Project is the execution view. Important UI-heavy work should have an approved Figma/FigJam reference before implementation.
 
@@ -61,19 +61,12 @@ Do not treat suggested/defaulted labels as verified ground truth. Manager-visibl
 
 After A.1 passes, continue to **v0.2A.2 — Small-team production foundation**.
 
-### A.1 Work review / next action
+### A.1 verified engineering state / pending owner action
 
-Architecture/data-model review completed against planning commit
-`15cdbb8988433849aeedf1f3e261064888adef91`. **Ready for Codex implementation;
-not implemented, independently verified, or owner-accepted.**
-
-- Work review: `docs/architecture/V0.2A.1-REVIEW.md`.
-- Engineering decision: `docs/architecture/decisions/ADR-004-label-and-check-evidence.md`.
-- Bounded implementation handoff: `docs/handoffs/work-to-codex/V0.2A.1.md`.
-- Required evidence: `docs/V0.2A.1-ACCEPTANCE-TESTS.md`.
-- Next executor: Codex, new branch `milestone/v0.2a1-evidence` from current planning ref.
-- No new owner decision blocks implementation under the locked Chat handoff.
-- Work independently verifies the resulting PR before the 15–30 minute owner acceptance session.
+- A.1 implementation PR #10: `milestone/v0.2a1-evidence` at `3bc23ea19c5af356b6f380f53ac72a84d9e53f9f`, open/unmerged. Earlier Work independent verification closed R1 under the then-governing 1.3 workflow; this historical gate remains valid.
+- Isolated localhost:8001 correction PR #12: `fix/a1-local-origin-8001`; executable Independent Review **PASS** at exact code commit `9bee7291360a18012379dd4a9aa51088f1494e93` (2026-10-15). Review report: `docs/handoffs/independent-review-to-chat/V0.2A.1-LOCAL-ORIGIN.md`; restart instructions: `docs/LOCAL-ORIGIN-8001-RESTART.md` on the correction branch.
+- Local Windows owner upload retry and remaining six-step A.1 Human Test Packet are **PENDING**, not PASS; no production or physical Windows assertion follows from the Linux/ASGI review.
+- A.1 is not accepted, merged, deployed or a newly recorded known-good checkpoint. A.2 remains unauthorized.
 
 ## Important preservation requirements
 Do not lose existing photos, labels, model artifacts, datasets, dealership rules, review history, or working Cloudflare pilot configuration during migrations.
@@ -86,10 +79,9 @@ A separate cross-project Control Center project is approved. Vehicle QC should e
 Vehicle QC should be treated as a focused operational-quality pilot rather than a generic AI-photo product. The business case should be proven through measurable reductions in review labor, reshoots/return visits, false alerts, and delivery uncertainty. Specialized ML expansion is evidence-gated: add one validated high-value check at a time rather than several model families in parallel.
 
 
-## Management migration — pending documentation PR
 
-Vehicle QC has a proposed documentation-only migration to canonical Management Standard **1.5.3.2**. It updates the live role seeds and the new-workflow protocol without revising historical A.1 verification documents or accepted product scope. The planned management PR is separate from implementation PR #10. Root `project-control.yaml` lives on `main` and should only advertise repository adoption after the documentation PR is accepted and reconciled.
+## Management adoption — draft G2 candidate
 
-## A.1 owner test observation (not yet resolved)
+This branch contains a proposed adoption of canonical Management Standard 1.8.0, verified Git blob `80a7eb10bcd31647f6f20e4673caebf0b418986a`, approved canonical merge `d1560613884c01998ced9cd0405f6c37d98e62ee`. The active Lead conversation adopted 1.8.0 for compatible coordination; repository adoption remains subject to draft PR #11 independent G2 documentary review and exact owner approval. The root `project-control.yaml` on `main` remains version 1.3 until intentional reconciliation. WM1–WM6 are optional execution preferences and do not preauthorize A.2 or a blanket multi-milestone run.
 
-The separate Windows A.1 checkout `3bc23ea`, bound to `127.0.0.1:8001` with disposable storage `G:\\Projects\\vehicle-photo-qc-a1-test-data`, loads locally but training upload received 403: “Requests must come from this app's own address.” The local origin allowlist currently lists ports 8000 and 5173. This is a blocked owner test pending bounded correction and separate verification; do not interpret it as failed product acceptance, merge/deploy PR #10, change production Cloudflare settings, or begin A.2.
+Prior PR #11 Work preflight M1–M4 is documented at `docs/handoffs/work-to-chat/PR11-MANAGEMENT-REVIEW.md` on the correction branch; this candidate addresses the known stale-state, routing, process-reference and migration-severity issues and still requires independent readback.
