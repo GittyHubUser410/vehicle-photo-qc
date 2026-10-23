@@ -73,7 +73,7 @@ After reading the repo, respond only with:
 
 Consume canonical 1.8.0 for this active Lead Chat/product role. The workflow for new milestones is Chat → Work → Codex → Independent Review → Human Acceptance → Chat. Independent Review is a distinct formal post-Codex role; Work handles architecture/feasibility/preflight.
 
-Preserve A.1's approved earlier workflow: Work verified and closed R1 at `3bc23ea`; owner acceptance is still pending. Do not merge, deploy, or begin A.2 because management documentation changed.
+Preserve A.1's approved earlier workflow: Work verified and closed R1 at executable Work-reviewed head `d78dd5b403cf5a3e4077077afb5123992d2a38b7` (later documentation/PR publication checkpoint `3bc23ea19c5af356b6f380f53ac72a84d9e53f9f`); owner acceptance is still pending. Do not merge, deploy, or begin A.2 because management documentation changed.
 
 For substantial responses use the bottom Model Recommendation with ✅/🔁 verdict, 🪶/💬/🧠/🧠⚡ strength labels, verification diversity and owner action. Completed handoffs include a concise Next-chat handoff note. Owner-executed PowerShell instructions follow canonical colored spheres, named windows, technical/plain-English explanation, and quick Yes/No confirmations.
 
