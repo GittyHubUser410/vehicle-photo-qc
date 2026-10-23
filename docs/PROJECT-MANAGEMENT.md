@@ -1,11 +1,11 @@
 # Project Management Standard — Vehicle QC
 
-**Management standard:** 1.3  
+**Management standard:** 1.8.0  
 **Canonical standard:** AI Project Control Center `docs/PROJECT-MANAGEMENT-STANDARD.md`
 
 Vehicle QC uses the human-bottleneck optimized workflow:
 
-`Chat → Work → Codex → Work → Chat`
+`Chat → Work → Codex → Independent Review → Human Acceptance → Chat`
 
 This local file is a project-specific snapshot. If it conflicts with a newer explicitly approved Vehicle QC product rule, the product-specific rule wins.
 
@@ -52,21 +52,25 @@ Read:
 - current handoff/specification and relevant ADR/C4/API/Figma references.
 
 
-## Model-strength guidance
-Use Management Standard 1.3 Execution Guidance for substantial handoffs and next steps:
-- Difficulty: Low / Medium / High / Very High.
-- Recommended Model Strength: Light / Standard / Strong / Maximum.
-- Why that level is appropriate.
-- Escalation conditions for using a stronger model.
-- Whether owner intervention is required before proceeding.
+## Independent Review and migration boundary
 
-Routine Light/Standard guidance is informational. Strong/Maximum guidance becomes an owner gate only when model choice materially affects risk, rework, or likelihood of success.
+For newly migrated implementation work, Independent Review is the separate formal read-only post-Codex verification role. Work remains architecture/feasibility/handoff owner and can conduct technical preflight. Review uses repository evidence, acceptance criteria, Codex report, and an independently inspected PR/checkpoint; ordinary implementation defects return to Codex for re-review.
+
+**Existing A.1 exception:** Under the earlier approved 1.3 workflow, Work independently verified A.1 executable head `d78dd5b403cf5a3e4077077afb5123992d2a38b7` and closed R1; `3bc23ea19c5af356b6f380f53ac72a84d9e53f9f` is the later documentation/PR publication checkpoint. Preserve that completed review and its exact evidence; owner acceptance is still pending. The new role separation governs later explicitly migrated workflows and must not retroactively label A.1 unverified or accepted.
+
+## Model-strength guidance
+
+Use canonical Management Standard 1.8.0. Substantial handoffs place a Model Recommendation section at the bottom with a prominent **✅ NO CHANGE NEEDED** or **🔁 CHANGE RECOMMENDED** verdict at its top. Include current/recommended model, strength, task difficulty, verification diversity, escalation conditions and owner-action requirements; no legacy terminal MODEL CHANGE line.
+
+Reasoning-strength icons: 🪶 Light, 💬 Standard, 🧠 Strong, 🧠⚡ Maximum. Copy/paste cross-chat messages show the recommended model/strength nearby, and completed handoffs include a concise Next-chat handoff note. A genuinely blocking inadequacy is raised before deep work.
+
+Use canonical owner-facing technical guidance: 🟢 action, 🔴 replace/change only when needed, 🔵 information, 🟠 purpose, 🟣 expected/actual result, 🟡 direct instruction, 🛑 stop; task-specific PowerShell window names and plain-English technical explanations. Prefer Yes/No checks where expected results are clear.
 
 ## Management governance
 This project consumes the canonical management standard from `GittyHubUser410/AI-Project-Control-Center`. Project Chat/Work/Codex may propose global workflow improvements but must not redefine the canonical cross-project management standard, model-strength policy, or orchestration authority. Route those proposals to the AI Project Control Center normal Chat.
 
 
-## Standard 1.3 additions
+## Preserved Standard 1.3 foundations
 - The owner remains the accountable human; Chat/Work/Codex are executors/delegates.
 - Future durable orchestration uses Project → Workflow → Run → Action identity.
 - Human gates pause/resume the same run rather than creating a new ambiguous attempt.
@@ -75,8 +79,16 @@ This project consumes the canonical management standard from `GittyHubUser410/AI
 - Management Standard version and project-control schema version are separate.
 - Repository adoption and active-conversation adoption are separate states.
 
-This is a minor / next-handoff migration and grants no new agent authority.
+The proposed 1.8.0 adoption is a **major governance/process migration (G2)**; the owner has authorized preparation, but documentary Independent Review and exact PR acceptance remain required. It grants no new agent authority.
 
 
 ## Owner-facing document style
 For substantial owner-facing Google Docs, roadmaps, plans, research reports, or management guides, use the canonical AI Project Control Center `docs/DOCUMENT-STYLE-GUIDE.md`. Apply its professional engineering-document presentation automatically unless the owner requests another style or an external template takes precedence.
+
+## Work-maximized execution envelopes (WM1–WM6)
+
+Where already authorized product scope and dependencies allow, Work should prefer a cohesive, milestone-spanning, owner-preauthorized execution envelope. Continue eligible work without repetitive microapprovals, while retaining the separate authority of Codex implementation and Independent Review. Record intermediate GitHub commits, actual tests and unknowns, recover from immutable verified state, and stop only the blocked dependency. Consolidate owner questions and closure. Never claim unrun evidence as PASS; no paid spending, credentials change, deployment or merge without separate authority. A.1 remains held at the owner acceptance gate, and A.2 remains unapproved.
+
+## Adoption state
+
+This file is the **proposed repository adoption** of 1.8.0 until its documentation PR is accepted/merged. The active Chat and Work conversations adopt the newer instructions independently. Historical handoffs and the pilot release retain their original approved standard and authority. The project-control schema version remains independent of the management-standard version.
