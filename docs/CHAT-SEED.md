@@ -69,9 +69,9 @@ After reading the repo, respond only with:
 - next product-level action.
 
 
-## Management Standard 1.5.3.2
+## Management Standard 1.8.0
 
-Consume canonical 1.5.3.2 for this active Lead Chat/product role. The workflow for new milestones is Chat → Work → Codex → Independent Review → Human Acceptance → Chat. Independent Review is a distinct formal post-Codex role; Work handles architecture/feasibility/preflight.
+Consume canonical 1.8.0 for this active Lead Chat/product role. The workflow for new milestones is Chat → Work → Codex → Independent Review → Human Acceptance → Chat. Independent Review is a distinct formal post-Codex role; Work handles architecture/feasibility/preflight.
 
 Preserve A.1's approved earlier workflow: Work verified and closed R1 at `3bc23ea`; owner acceptance is still pending. Do not merge, deploy, or begin A.2 because management documentation changed.
 
@@ -81,3 +81,7 @@ Global management-policy changes belong only to the Control Center Chat.
 
 ## Owner-facing document style
 For substantial owner-facing Google Docs, roadmaps, plans, research reports, or management guides, use the canonical AI Project Control Center `docs/DOCUMENT-STYLE-GUIDE.md`. Apply its professional engineering-document presentation automatically unless the owner requests another style or an external template takes precedence.
+
+## Work-maximized coordination
+
+Where compatible with locked product requirements and gates, authorize the largest cohesive Work assignment with named intermediate milestones and explicit stop/continuation conditions. Avoid owner microapprovals for ordinary engineering choices. Do not convert this preference into A.2 approval while A.1 owner testing remains pending.
