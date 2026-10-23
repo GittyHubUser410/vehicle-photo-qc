@@ -1,15 +1,12 @@
 # Vehicle QC v0.2 Codex handoff
 
-## Current checkpoint override — v0.2A.1
+## Current checkpoint — A.1 implemented, human acceptance pending
 
-The active next task is `docs/handoffs/work-to-codex/V0.2A.1.md` on
-`docs/v0.2-planning`. Read CURRENT-STATE and that bounded handoff first.
-Start implementation from the current planning ref containing that handoff, not
-from the older pilot checkpoint below. The older full v0.2A specification is
-background for A.2; do not implement PostgreSQL/accounts/worker redesign in A.1.
-The remaining overview below describes the original release families and pilot baseline.
+**This README is background, not an active Codex authorization.** The original implementation assignment at `docs/handoffs/work-to-codex/V0.2A.1.md` was executed on PR #10, `milestone/v0.2a1-evidence`. Work independently reviewed executable head `d78dd5b403cf5a3e4077077afb5123992d2a38b7` under the prior approved workflow; the later `3bc23ea19c5af356b6f380f53ac72a84d9e53f9f` is a documentation/PR publication checkpoint, not a second executed verification. R1 remains closed.
 
-This folder is the source of truth for the next development cycle.
+The bounded localhost-8001 correction PR #12 has formal Independent Review PASS at executable checkpoint `9bee7291360a18012379dd4a9aa51088f1494e93`. The isolated Windows owner retry and six-step A.1 acceptance are still **PENDING**. Neither PR #10 nor PR #12 is merged/deployed; A.2 is **not authorized**.
+
+**Codex must not restart the original A.1 assignment.** A new Codex run requires a separate current approved Work → Codex handoff with an exact branch/checkpoint and bounded scope. The remaining overview describes historical release scope and the v0.1 baseline, not a standing executable instruction.
 
 ## Current code baseline
 
